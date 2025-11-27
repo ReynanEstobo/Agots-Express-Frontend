@@ -1,30 +1,21 @@
 // DashboardSidebar.jsx
-import {
-  ClipboardList,
-  Home,
-  LineChart,
-  Menu,
-  MessageSquare,
-  Users,
-  Utensils,
-} from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { ClipboardList, Home, LineChart, Menu, MessageSquare, Users, Utensils } from "lucide-react";
 
 export const DashboardSidebar = () => {
   const navigate = useNavigate();
-  const [active, setActive] = useState("Dashboard");
+  const location = useLocation(); // Get current path
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
     ["Dashboard", Home, "/admin-dashboard"],
-    ["Orders", ClipboardList, "/admin-dashboard"],
-    ["Customers", Users, "/admin-dashboard"],
-    // ❌ Reservations Removed
-    ["Menu", Utensils, "/admin-dashboard"],
-    ["Feedback", MessageSquare, "/admin-dashboard"],
-    ["Announcements", ClipboardList, "/admin-dashboard"],
-    ["Analytics", LineChart, "/admin-dashboard"],
+    ["Orders", ClipboardList, "/orders"],
+    ["Customers", Users, "/customers"],
+    ["Menu", Utensils, "/menu"],
+    ["Feedback", MessageSquare, "/feedback"],
+    ["Announcements", ClipboardList, "/announcements"],
+    ["Analytics", LineChart, "/analytics"],
   ];
 
   return (
@@ -34,7 +25,7 @@ export const DashboardSidebar = () => {
     >
       {/* Top Section */}
       <div className="flex flex-col p-4">
-        {/* Collapse/Expand Button */}
+        {/* Collapse Button */}
         <div className="flex justify-end mb-4">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -62,41 +53,32 @@ export const DashboardSidebar = () => {
           </div>
         </div>
 
-        {/* Title */}
-        <h2
-          className={`text-2xl font-semibold text-center mb-6 overflow-hidden transition-opacity duration-500 ease-in-out ${
-            isCollapsed ? "opacity-0" : "opacity-100"
-          }`}
-        >
-          Agot's Admin
-        </h2>
-
         {/* Menu Items */}
         <nav className="flex flex-col gap-2">
-          {menuItems.map(([label, Icon, path], i) => (
-            <button
-              key={i}
-              onClick={() => {
-                setActive(label);
-                navigate(path);
-              }}
-              className={`flex items-center w-full px-3 py-2 rounded-lg transition-all duration-500 ease-in-out ${
-                active === label ? "bg-white/20" : "hover:bg-white/10"
-              }`}
-            >
-              <div className="flex-shrink-0 w-6 flex justify-center">
-                <Icon size={20} />
-              </div>
-
-              <span
-                className={`ml-3 transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${
-                  isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full"
+          {menuItems.map(([label, Icon, path], i) => {
+            const isActive = location.pathname === path;
+            return (
+              <button
+                key={i}
+                onClick={() => navigate(path)}
+                className={`flex items-center w-full px-3 py-2 rounded-lg transition-all duration-500 ease-in-out ${
+                  isActive ? "bg-white/20" : "hover:bg-white/10"
                 }`}
               >
-                {label}
-              </span>
-            </button>
-          ))}
+                <div className="flex-shrink-0 w-6 flex justify-center">
+                  <Icon size={20} color={isActive ? "#FFD700" : "#FFFFFF"} />
+                </div>
+
+                <span
+                  className={`ml-3 transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${
+                    isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full"
+                  }`}
+                >
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </nav>
       </div>
 
