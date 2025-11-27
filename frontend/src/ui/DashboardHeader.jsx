@@ -56,7 +56,7 @@ export const DashboardHeader = () => {
               <User size={20} className="text-white" />
             </div>
             <div className="text-sm">
-              <p className="font-semibold">Admin</p>
+              <p className="font-semibold">Admin</p> 
               <p className="text-gray-500">Manager</p>
             </div>
           </button>
