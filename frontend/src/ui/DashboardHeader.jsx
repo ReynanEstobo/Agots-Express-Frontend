@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 export const DashboardHeader = () => {
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
-  const navigate = useNavigate(); // Hook for programmatic navigation
+  const navigate = useNavigate();
 
   const toggleAdminMenu = () => setShowAdminMenu(!showAdminMenu);
 
@@ -15,17 +15,18 @@ export const DashboardHeader = () => {
   };
 
   const handleLogout = () => {
-    // Here you can also clear any auth tokens if needed
     alert("Logged out successfully!");
-    navigate("/"); // Redirect to login page
+    navigate("/");
   };
 
   return (
     <header className="sticky top-0 bg-white z-10 border-b border-gray-200 p-4 flex justify-between items-center shadow-sm">
-      {/* Left side placeholder removed (no search) */}
-      <div className="flex-1"></div>
+      {/* LEFT SIDE → Moved "Agot's Admin" here */}
+      <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-800 tracking-tight pl-2 drop-shadow-sm">
+        Agot's Admin
+      </h1>
 
-      {/* Right side icons */}
+      {/* RIGHT SIDE ICONS */}
       <div className="flex items-center gap-6 ml-4 relative">
         {/* Notification */}
         <button onClick={handleNotificationClick} className="relative">
@@ -56,7 +57,7 @@ export const DashboardHeader = () => {
               <User size={20} className="text-white" />
             </div>
             <div className="text-sm">
-              <p className="font-semibold">Admin</p> 
+              <p className="font-semibold">Admin</p>
               <p className="text-gray-500">Manager</p>
             </div>
           </button>
