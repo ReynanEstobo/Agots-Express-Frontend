@@ -1,11 +1,14 @@
 import axios from "axios";
 
-// Fetch stats including today's revenue and comparison values
+/**
+ * Fetch dashboard stats including today's revenue and comparison values
+ * Works with your existing dashboard code
+ */
 export const fetchStats = async () => {
   try {
     const res = await axios.get("http://localhost:5000/dashboard/stats");
 
-    // Backend now returns:
+    // Backend returns:
     // {
     //   totalOrders,
     //   totalOrdersPrevious,
@@ -33,7 +36,10 @@ export const fetchStats = async () => {
   }
 };
 
-// Fetch recent orders
+/**
+ * Fetch recent orders (last 10 orders)
+ * This keeps working for your existing dashboard widgets
+ */
 export const fetchRecentOrders = async () => {
   try {
     const res = await axios.get(
@@ -42,6 +48,20 @@ export const fetchRecentOrders = async () => {
     return res.data || [];
   } catch (err) {
     console.error("Failed to fetch recent orders:", err);
+    return [];
+  }
+};
+
+/**
+ * Fetch all orders for Orders page
+ * This is the new function to replace fetchRecentOrders in Orders.jsx
+ */
+export const fetchAllOrders = async () => {
+  try {
+    const res = await axios.get("http://localhost:5000/dashboard/orders");
+    return res.data || [];
+  } catch (err) {
+    console.error("Failed to fetch all orders:", err);
     return [];
   }
 };
