@@ -1,25 +1,12 @@
 import axios from "axios";
 
-/**
- * Fetch dashboard stats including today's revenue and comparison values
- * Works with your existing dashboard code
- */
+// ======================
+// DASHBOARD API
+// ======================
+
 export const fetchStats = async () => {
   try {
     const res = await axios.get("http://localhost:5000/dashboard/stats");
-
-    // Backend returns:
-    // {
-    //   totalOrders,
-    //   totalOrdersPrevious,
-    //   totalCustomers,
-    //   totalCustomersPrevious,
-    //   todayRevenue,
-    //   revenuePrevious,
-    //   averageFeedback,
-    //   feedbackPrevious
-    // }
-
     return res.data;
   } catch (err) {
     console.error("Failed to fetch stats:", err);
@@ -36,32 +23,49 @@ export const fetchStats = async () => {
   }
 };
 
-/**
- * Fetch recent orders (last 10 orders)
- * This keeps working for your existing dashboard widgets
- */
 export const fetchRecentOrders = async () => {
   try {
     const res = await axios.get(
       "http://localhost:5000/dashboard/recent-orders"
     );
     return res.data || [];
-  } catch (err) {
-    console.error("Failed to fetch recent orders:", err);
+  } catch {
     return [];
   }
 };
 
-/**
- * Fetch all orders for Orders page
- * This is the new function to replace fetchRecentOrders in Orders.jsx
- */
 export const fetchAllOrders = async () => {
   try {
     const res = await axios.get("http://localhost:5000/dashboard/orders");
     return res.data || [];
-  } catch (err) {
-    console.error("Failed to fetch all orders:", err);
+  } catch {
     return [];
+  }
+};
+
+// ======================
+// CUSTOMERS API
+// ======================
+
+export const fetchCustomers = async () => {
+  try {
+    const res = await axios.get("http://localhost:5000/dashboard/customers");
+    return res.data || [];
+  } catch (err) {
+    console.error("Failed to fetch customers:", err);
+    return [];
+  }
+};
+
+export const updateCustomer = async (id, payload) => {
+  try {
+    const res = await axios.put(
+      `http://localhost:5000/dashboard/customers/${id}`,
+      payload
+    );
+    return res.data;
+  } catch (err) {
+    console.error("Failed to update customer:", err);
+    throw err;
   }
 };

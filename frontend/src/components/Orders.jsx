@@ -77,6 +77,7 @@ const Orders = () => {
 
   const handleViewOrder = async (orderId) => {
     try {
+      // Fetch order items with actual menu names
       const res = await axios.get(
         `http://localhost:5000/dashboard/order-items/${orderId}`
       );
