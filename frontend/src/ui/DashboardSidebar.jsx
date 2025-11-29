@@ -28,7 +28,7 @@ export const DashboardSidebar = () => {
   const menuItems = [
     ["Dashboard", Home, "/admin-dashboard"],
     ["Orders", ClipboardList, "/orders"],
-    ["Customers", Users, "/customers"],
+    ["Customers", Users, "/customers"], // <-- fixed path here
     ["Menu", Utensils, "/menu"],
     ["Feedback", MessageSquare, "/feedback"],
     ["Announcements", ClipboardList, "/announcements"],

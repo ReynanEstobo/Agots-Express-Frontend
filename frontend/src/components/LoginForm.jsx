@@ -1,6 +1,12 @@
 import { useState } from "react";
 
-const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }) => {
+const LoginForm = ({
+  username,
+  setUsername,
+  password,
+  setPassword,
+  handleLogin,
+}) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -20,11 +26,12 @@ const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }
         />
       </div>
 
-      {/* Password with toggle */}
+      {/* Password */}
       <div className="relative">
         <label className="block text-gray-700 mb-1 text-sm sm:text-base">
           Password:
         </label>
+
         <input
           type={showPassword ? "text" : "password"}
           placeholder="********"
@@ -33,6 +40,7 @@ const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }
           className="w-full border border-gray-300 rounded-md p-2 pr-10 text-sm sm:text-base"
           required
         />
+
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
@@ -48,7 +56,6 @@ const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }
           >
             {showPassword ? (
               <>
-                {/* Open eye */}
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -57,18 +64,25 @@ const LoginForm = ({ username, setUsername, password, setPassword, handleLogin }
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-0.584 1.859-2.009 3.43-3.742 4.527"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7"
                 />
               </>
             ) : (
               <>
-                {/* Closed eye */}
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 9.879a3 3 0 104.242 4.242" />
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-2.1 0-4.03-.735-5.568-1.948"
+                  d="M3 3l18 18"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9.879 9.879a3 3 0 104.242 4.242"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 5c4.478 0 8.268 2.943 9.542 7"
                 />
               </>
             )}

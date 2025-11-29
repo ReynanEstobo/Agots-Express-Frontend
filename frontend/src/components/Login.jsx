@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginAllRoles } from "../api/Api.js";
+import { loginAllRoles } from "../api/LoginAPI.js";
 import LoginForm from "./LoginForm";
-import SignupForm from "./SignupForm"; // keep your existing signup
+import SignupForm from "./SignupForm";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -20,48 +20,45 @@ const Login = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
 
-  // ✅ LOGIN HANDLER FUNCTION
+  // ⭐ FIXED LOGIN HANDLER
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
-      const data = await loginAllRoles(loginUsername, loginPassword);
+      const res = await loginAllRoles(loginUsername, loginPassword);
 
-      if (data.token) localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
-
-      alert(`Login Successful! You are logged in as ${data.role}`);
-
-      // 🔥 Redirect based on role
-      switch (data.role) {
-        case "admin":
-          navigate("/admin-dashboard"); // AdminDashboard.jsx
-          break;
-        case "customer":
-          navigate("/customer-dashboard"); // CustomerDashboard.jsx
-          break;
-        case "staff":
-          navigate("/staff-dashboard"); // StaffDashboard.jsx
-          break;
-        case "rider":
-          navigate("/rider-dashboard"); // RiderDashboard.jsx
-          break;
-        default:
-          navigate("/"); // fallback
+      if (!res || !res.role) {
+        alert("Invalid username or password.");
+        return;
       }
+
+      // Save login data
+      localStorage.setItem("token", res.token || "");
+      localStorage.setItem("role", res.role);
+      localStorage.setItem("user_id", res.id);
+
+      alert(`Login Successful! You are logged in as ${res.role}`);
+
+      // ⭐ REDIRECT BASED ON ROLE
+      if (res.role === "admin") navigate("/admin-dashboard");
+      else if (res.role === "customer") navigate("/customer-dashboard");
+      else if (res.role === "staff") navigate("/staff-dashboard");
+      else if (res.role === "rider") navigate("/rider-dashboard");
+      else navigate("/");
+
     } catch (err) {
       console.error("Login error:", err);
-      alert(err.message || "Failed to connect to the server.");
+      alert(err.message || "Failed to connect to server.");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#323C4D] to-[#0F2247] px-4 sm:px-6">
       <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8 w-full max-w-sm sm:max-w-md lg:max-w-lg shadow-2xl">
+
         {/* Logo */}
         <div className="flex justify-center mb-4 sm:mb-6">
           <div className="bg-yellow-400 rounded-full p-3 sm:p-4">
-            {/* Keep your existing SVG */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="64"
@@ -96,6 +93,7 @@ const Login = () => {
           >
             Login
           </button>
+
           <button
             onClick={() => setActiveTab("signup")}
             className={`px-3 sm:px-4 py-2 font-medium text-sm sm:text-base ${
@@ -108,14 +106,14 @@ const Login = () => {
           </button>
         </div>
 
-        {/* Form Slide */}
+        {/* Sliding Forms */}
         <div className="overflow-hidden">
           <div
             className={`flex transition-transform duration-500 ${
               activeTab === "login" ? "translate-x-0" : "-translate-x-full"
             }`}
           >
-            {/* LOGIN FORM */}
+            {/* Login Form */}
             <div className="w-full flex-shrink-0">
               <LoginForm
                 username={loginUsername}
@@ -126,7 +124,7 @@ const Login = () => {
               />
             </div>
 
-            {/* SIGNUP FORM */}
+            {/* Signup Form */}
             <div className="w-full flex-shrink-0">
               <SignupForm
                 signupName={signupName}
