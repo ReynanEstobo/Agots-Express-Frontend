@@ -58,7 +58,7 @@ const AdminDashboard = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatsCard
-              title="Total Orders"
+              title="Today's total Orders"
               value={stats.totalOrders}
               change={
                 getChangePercent(stats.totalOrders, stats.totalOrdersPrevious) +
