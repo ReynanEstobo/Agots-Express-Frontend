@@ -141,7 +141,7 @@ const Orders = () => {
                 Orders Management
               </h1>
               <p className="text-gray-500 mb-7">
-                View and manage all restaurant orders
+                Monitor all restaurant orders
               </p>
             </div>
           </div>
