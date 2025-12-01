@@ -41,16 +41,18 @@ const StatsCard = ({ title, value, icon: Icon, iconColor }) => {
 
 export default function Feedback() {
   const [feedbackData, setFeedbackData] = useState([]);
+  const [avgRating, setAvgRating] = useState(0);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [responseText, setResponseText] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast: triggerToast } = useToast();
 
-  // Fetch all feedback
+  // Fetch feedback from backend
   const loadFeedback = async () => {
     try {
-      const data = await fetchFeedback();
-      setFeedbackData(data);
+      const { feedback, avgRating } = await fetchFeedback();
+      setFeedbackData(feedback);
+      setAvgRating(avgRating); // Use backend SQL-calculated average
     } catch (err) {
       console.error("Error fetching feedback:", err);
     }
@@ -60,24 +62,18 @@ export default function Feedback() {
     loadFeedback();
   }, []);
 
-  // Handle sending response
   const handleRespond = async () => {
     if (!responseText.trim()) return;
 
     try {
-      const responder_id = 1; // Replace with actual admin/staff ID
-
-      // Send response
+      const responder_id = 1; // Replace with real admin/staff ID
       await respondToFeedback(
         selectedFeedback.feedback_id,
         responder_id,
         responseText
       );
 
-      // Refetch feedback to get latest responses
       await loadFeedback();
-
-      // Close modal and reset state
       setIsModalOpen(false);
       setSelectedFeedback(null);
       setResponseText("");
@@ -89,21 +85,13 @@ export default function Feedback() {
     }
   };
 
-  // Stats
-  const avgRating =
-    feedbackData.length > 0
-      ? (
-          feedbackData.reduce((acc, f) => acc + f.rating, 0) /
-          feedbackData.length
-        ).toFixed(1)
-      : 0;
   const totalFeedback = feedbackData.length;
   const positiveCount = feedbackData.filter((f) => f.rating >= 4).length;
 
   const statsCards = [
     {
       title: "Average Rating",
-      value: avgRating,
+      value: avgRating.toFixed(1), // directly from backend
       icon: Star,
       iconColor: "bg-yellow-400",
     },
@@ -186,14 +174,12 @@ export default function Feedback() {
                     {feedback.feedback_comment}
                   </p>
 
-                  {/* Existing Response */}
                   {feedback.response_text && (
                     <div className="mb-3 p-3 bg-gray-100 rounded-md text-gray-700">
                       <strong>Response:</strong> {feedback.response_text}
                     </div>
                   )}
 
-                  {/* Response Modal */}
                   <Dialog
                     open={
                       isModalOpen &&

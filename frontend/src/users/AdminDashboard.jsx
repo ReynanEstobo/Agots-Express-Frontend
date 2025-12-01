@@ -13,7 +13,6 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
 
-  // ------------------------- LOAD DASHBOARD DATA -------------------------
   const loadDashboard = async () => {
     try {
       const statsRes = await axios.get("http://localhost:5000/dashboard/stats");
@@ -24,7 +23,6 @@ const AdminDashboard = () => {
       );
       const orders = ordersRes.data || [];
 
-      // Fetch items for each order
       const ordersWithItems = await Promise.all(
         orders.map(async (order) => {
           const orderItemsRes = await axios.get(
@@ -44,7 +42,9 @@ const AdminDashboard = () => {
     loadDashboard();
   }, []);
 
-  // ------------------------- UTILITY FUNCTIONS -------------------------
+  // -----------------------------
+  // Helper to format change percentage
+  // -----------------------------
   const getChangePercent = (current, previous, suffix = "") => {
     current = Number(current || 0);
     previous = Number(previous || 0);
@@ -55,26 +55,16 @@ const AdminDashboard = () => {
     }
 
     const percent = ((current - previous) / previous) * 100;
-    const sign = percent >= 0 ? "+" : ""; // negative automatically has '-' sign
+    const sign = percent > 0 ? "+" : "";
     return sign + percent.toFixed(1) + suffix;
   };
 
-  const getChangeType = (current, previous) => {
-    const percentChange =
-      previous === 0
-        ? current === 0
-          ? 0
-          : 100
-        : ((current - previous) / previous) * 100;
-    return percentChange >= 0 ? "positive" : "negative";
-  };
-
-  // ------------------------- RENDER -------------------------
   return (
     <div className="min-h-screen bg-[#F4F6F9]">
       <DashboardSidebar />
       <div className="pl-64 transition-all duration-300">
         <DashboardHeader />
+
         <motion.main
           key="dashboard-content"
           initial={{ opacity: 0, y: 10 }}
@@ -110,16 +100,17 @@ const AdminDashboard = () => {
                 {/* Orders */}
                 <StatsCard
                   title="Today's total Orders"
-                  value={stats.totalOrders}
+                  value={stats.totalOrders || 0}
                   change={getChangePercent(
                     stats.totalOrders,
                     stats.totalOrdersPrevious,
                     "% from yesterday"
                   )}
-                  changeType={getChangeType(
-                    stats.totalOrders,
-                    stats.totalOrdersPrevious
-                  )}
+                  changeType={
+                    stats.totalOrders - stats.totalOrdersPrevious >= 0
+                      ? "positive"
+                      : "negative"
+                  }
                   icon={ShoppingCart}
                   iconColor="bg-yellow-400"
                 />
@@ -127,16 +118,17 @@ const AdminDashboard = () => {
                 {/* Customers */}
                 <StatsCard
                   title="Customers"
-                  value={stats.totalCustomers}
-                  change={getChangePercent(
-                    stats.currentWeekCustomers,
-                    stats.previousWeekCustomers,
-                    "% from last week"
-                  )}
-                  changeType={getChangeType(
-                    stats.currentWeekCustomers,
-                    stats.previousWeekCustomers
-                  )}
+                  value={stats.totalCustomers || 0} // all-time total
+                  change={
+                    stats.customerPercentage !== undefined
+                      ? (stats.customerPercentage >= 0 ? "+" : "") +
+                        stats.customerPercentage.toFixed(1) +
+                        "% from yesterday"
+                      : "0% from yesterday"
+                  }
+                  changeType={
+                    stats.customerPercentage >= 0 ? "positive" : "negative"
+                  }
                   icon={Users}
                   iconColor="bg-blue-400"
                 />
@@ -144,16 +136,17 @@ const AdminDashboard = () => {
                 {/* Revenue */}
                 <StatsCard
                   title="Revenue Today"
-                  value={`₱${Number(stats.todayRevenue).toLocaleString()}`}
+                  value={`₱${Number(stats.todayRevenue || 0).toLocaleString()}`}
                   change={getChangePercent(
                     stats.todayRevenue,
                     stats.revenuePrevious,
                     "% from yesterday"
                   )}
-                  changeType={getChangeType(
-                    stats.todayRevenue,
-                    stats.revenuePrevious
-                  )}
+                  changeType={
+                    stats.todayRevenue - stats.revenuePrevious >= 0
+                      ? "positive"
+                      : "negative"
+                  }
                   icon={TrendingUp}
                   iconColor="bg-green-500"
                 />
@@ -161,12 +154,14 @@ const AdminDashboard = () => {
                 {/* Feedback */}
                 <StatsCard
                   title="New Feedback"
-                  value={stats.newFeedbackToday}
-                  change={`${stats.satisfactionPercentage.toFixed(
+                  value={stats.newFeedbackToday || 0}
+                  change={`${Number(stats.satisfactionPercentage || 0).toFixed(
                     1
                   )}% satisfaction`}
                   changeType={
-                    stats.satisfactionPercentage >= 50 ? "positive" : "negative"
+                    (stats.satisfactionPercentage || 0) >= 50
+                      ? "positive"
+                      : "negative"
                   }
                   icon={MessageSquare}
                   iconColor="bg-orange-400"
