@@ -9,4 +9,57 @@
   --border: 0 0% 80%;
   --card: 0 0% 100%;
   --muted-foreground: 0 0% 45%;
+
+  background: 0 0% 96%;
+  --foreground: 220 75% 15%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 220 75% 15%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 75% 15%;
+
+  /* Navy Blue Primary - #0A1A3F */
+  --primary: 220 75% 15%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Gold Accent - #F2C94C */
+  --accent: 45 87% 62%;
+  --accent-foreground: 220 75% 15%;
+
+  /* Light variations */
+  --secondary: 220 60% 25%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 0 0% 96%;
+  --muted-foreground: 220 20% 50%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 220 20% 88%;
+  --input: 220 20% 88%;
+  --ring: 45 87% 62%;
+
+  --radius: 0.5rem;
+
+  /* Custom Theme Colors */
+  --navy-dark: 220 75% 15%;
+  --navy-medium: 220 60% 25%;
+  --navy-light: 220 40% 40%;
+  --gold: 45 87% 62%;
+  --gold-dark: 45 70% 50%;
+  --success: 142 76% 36%;
+  --warning: 38 92% 50%;
+  --info: 199 89% 48%;
+
+  /* Sidebar - Navy theme */
+  --sidebar-background: 220 75% 15%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 45 87% 62%;
+  --sidebar-primary-foreground: 220 75% 15%;
+  --sidebar-accent: 220 60% 25%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 220 40% 25%;
+  --sidebar-ring: 45 87% 62%;
 }

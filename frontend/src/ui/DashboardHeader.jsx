@@ -1,8 +1,8 @@
-import { Bell, LogOut, ShoppingCart, User } from "lucide-react";
+import { Bell, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-export const DashboardHeader = () => {
+export const DashboardHeader = ({ userRole = "Admin" }) => {
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const navigate = useNavigate();
@@ -19,11 +19,19 @@ export const DashboardHeader = () => {
     navigate("/");
   };
 
+  // Dynamically set title & profile
+  const headerTitle =
+    userRole === "Staff"
+      ? "Agot's Staff"
+      : userRole === "Rider"
+      ? "Agot's Rider"
+      : "Agot's Admin";
+
   return (
     <header className="sticky top-0 bg-white z-10 border-b border-gray-200 p-4 flex justify-between items-center shadow-sm">
-      {/* LEFT SIDE → Moved "Agot's Admin" here */}
+      {/* LEFT SIDE */}
       <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-800 tracking-tight pl-2 drop-shadow-sm">
-        Agot's Admin
+        {headerTitle}
       </h1>
 
       {/* RIGHT SIDE ICONS */}
@@ -37,17 +45,17 @@ export const DashboardHeader = () => {
           {showNotification && (
             <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-lg p-4 text-sm text-gray-700 flex items-center gap-3 z-50">
               <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center shadow-sm">
-                <ShoppingCart size={20} className="text-yellow-600" />
+                <User size={20} className="text-yellow-600" />
               </div>
               <div>
-                <p className="font-semibold">New Order Alert</p>
-                <p>Order #1239 has just been placed!</p>
+                <p className="font-semibold">New Notification</p>
+                <p>Check your updates!</p>
               </div>
             </div>
           )}
         </button>
 
-        {/* Admin Profile */}
+        {/* Profile */}
         <div className="relative">
           <button
             onClick={toggleAdminMenu}
@@ -57,7 +65,7 @@ export const DashboardHeader = () => {
               <User size={20} className="text-white" />
             </div>
             <div className="text-sm">
-              <p className="font-semibold">Admin</p>
+              <p className="font-semibold">{userRole}</p>
               <p className="text-gray-500">Manager</p>
             </div>
           </button>

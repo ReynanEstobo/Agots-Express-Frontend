@@ -42,9 +42,7 @@ const AdminDashboard = () => {
     loadDashboard();
   }, []);
 
-  // -----------------------------
-  // Helper to format change percentage
-  // -----------------------------
+  // Helper: format change percentage, allow negative values
   const getChangePercent = (current, previous, suffix = "") => {
     current = Number(current || 0);
     previous = Number(previous || 0);
@@ -55,7 +53,7 @@ const AdminDashboard = () => {
     }
 
     const percent = ((current - previous) / previous) * 100;
-    const sign = percent > 0 ? "+" : "";
+    const sign = percent > 0 ? "+" : ""; // negative automatically has '-'
     return sign + percent.toFixed(1) + suffix;
   };
 
@@ -118,12 +116,12 @@ const AdminDashboard = () => {
                 {/* Customers */}
                 <StatsCard
                   title="Customers"
-                  value={stats.totalCustomers || 0} // all-time total
+                  value={stats.totalCustomers || 0}
                   change={
                     stats.customerPercentage !== undefined
-                      ? (stats.customerPercentage >= 0 ? "+" : "") +
-                        stats.customerPercentage.toFixed(1) +
-                        "% from yesterday"
+                      ? `${
+                          stats.customerPercentage >= 0 ? "+" : ""
+                        }${stats.customerPercentage.toFixed(1)}% from yesterday`
                       : "0% from yesterday"
                   }
                   changeType={

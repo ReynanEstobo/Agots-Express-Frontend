@@ -63,10 +63,11 @@ const Orders = () => {
 
       setOrders(sortedData);
 
+      // Stats for only pending, preparing, completed
       setStats({
         totalOrders: data.length,
-        preparing: data.filter((o) => o.status === "preparing").length,
         pending: data.filter((o) => o.status === "pending").length,
+        preparing: data.filter((o) => o.status === "preparing").length,
         completed: data.filter((o) => o.status === "completed").length,
       });
     } catch (error) {
@@ -80,12 +81,12 @@ const Orders = () => {
 
     const intervalId = setInterval(() => {
       loadOrders(); // Fetch every 30 seconds
-    }, 30000); // 30 seconds interval
+    }, 30000);
 
-    // Clean up interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
 
+  // Filter orders based on search and status
   const filteredOrders = orders.filter((order) => {
     const matchesStatus =
       statusFilter === "all" || order.status === statusFilter;
@@ -95,9 +96,9 @@ const Orders = () => {
     return matchesStatus && matchesSearch;
   });
 
+  // View order items modal
   const handleViewOrder = async (orderId) => {
     try {
-      // Fetch order items with actual menu names
       const res = await axios.get(
         `http://localhost:5000/dashboard/order-items/${orderId}`
       );
@@ -109,6 +110,7 @@ const Orders = () => {
     }
   };
 
+  // Stats cards (unchanged)
   const statsCards = [
     {
       title: "Today's Total Orders",
@@ -203,6 +205,8 @@ const Orders = () => {
                     <SelectItem value="all">All</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="preparing">Preparing</SelectItem>
+                    <SelectItem value="ready">Ready</SelectItem>
+                    <SelectItem value="on the way">On the Way</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
@@ -233,7 +237,23 @@ const Orders = () => {
                           ₱{Number(order.total_amount).toLocaleString()}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={order.status}>{order.status}</Badge>
+                          <Badge
+                            className={`${
+                              order.status === "pending"
+                                ? "bg-yellow-400 text-yellow-900"
+                                : order.status === "preparing"
+                                ? "bg-orange-400 text-orange-900"
+                                : order.status === "completed"
+                                ? "bg-green-500 text-white"
+                                : order.status === "ready"
+                                ? "bg-blue-500 text-white"
+                                : order.status === "on the way"
+                                ? "bg-purple-500 text-white"
+                                : "bg-gray-400 text-white"
+                            } px-2 py-1 rounded-full text-sm font-semibold`}
+                          >
+                            {order.status}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {new Date(order.created_at).toLocaleString()}
