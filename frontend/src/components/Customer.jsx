@@ -10,7 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { fetchCustomers, fetchStats, updateCustomer } from "../api/StatsAPI";
 import { Button } from "../ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card"; // Importing Card components
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
 import { DashboardHeader } from "../ui/DashboardHeader";
 import { DashboardSidebar } from "../ui/DashboardSidebar";
 import {
@@ -35,19 +35,19 @@ import {
 const statsCards = [
   {
     title: "Total Customers",
-    valueKey: "total",
+    valueKey: "totalCustomers",
     icon: User,
     iconColor: "bg-blue-400",
   },
   {
     title: "New This Month",
-    valueKey: "newMonth",
+    valueKey: "newCustomersThisMonth",
     icon: CheckCircle,
     iconColor: "bg-yellow-400",
   },
   {
     title: "Active Customers",
-    valueKey: "active",
+    valueKey: "activeCustomers",
     icon: Star,
     iconColor: "bg-green-500",
   },
@@ -65,12 +65,13 @@ const Customers = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [stats, setStats] = useState({
     totalCustomers: 0,
-    totalCustomersPrevious: 0,
-    todayRevenue: 0,
+    newCustomersThisMonth: 0,
+    activeCustomers: 0,
+    avgSpent: 0,
   });
-  const [loading, setLoading] = useState(false); // Loading state to show spinner during data fetch
+  const [loading, setLoading] = useState(false);
 
-  // Fetch customers and stats initially
+  // Fetch customers and stats
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -81,10 +82,7 @@ const Customers = () => {
 
     fetchData();
 
-    // Set interval to fetch data every 30 seconds
     const intervalId = setInterval(fetchData, 30000); // 30 seconds
-
-    // Clear interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
 
@@ -95,7 +93,12 @@ const Customers = () => {
 
   const loadStats = async () => {
     const data = await fetchStats();
-    setStats(data);
+    setStats({
+      totalCustomers: data.totalCustomers || 0,
+      newCustomersThisMonth: data.newCustomersThisMonth || 0,
+      activeCustomers: data.activeCustomers || 0,
+      avgSpent: data.avgSpent || 0,
+    });
   };
 
   const openModal = (customer) => {
@@ -116,15 +119,8 @@ const Customers = () => {
   const handleSave = async () => {
     let payload = { ...selectedCustomer };
     await updateCustomer(selectedCustomer.id, payload);
-    await loadCustomers(); // Reload customer list after update
+    await loadCustomers(); // Reload customer list
     closeModal();
-  };
-
-  const statsValues = {
-    total: stats.totalCustomers,
-    newMonth: stats.totalCustomers - stats.totalCustomersPrevious,
-    active: stats.totalCustomers,
-    avgSpent: stats.todayRevenue,
   };
 
   return (
@@ -139,7 +135,7 @@ const Customers = () => {
           </h1>
           <p className="text-gray-500 mb-7">View and manage all customers</p>
 
-          {/* Stats Card Display */}
+          {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
             {statsCards.map((card, idx) => {
               const gradientMap = {
@@ -165,7 +161,9 @@ const Customers = () => {
                   <div className="flex-1 pl-20">
                     <p className="text-gray-500 text-sm">{card.title}</p>
                     <p className="text-2xl font-bold mt-1">
-                      {statsValues[card.valueKey]}
+                      {card.valueKey === "avgSpent"
+                        ? `$${stats[card.valueKey].toFixed(2)}`
+                        : stats[card.valueKey]}
                     </p>
                   </div>
                 </div>

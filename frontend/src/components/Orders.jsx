@@ -111,7 +111,7 @@ const Orders = () => {
 
   const statsCards = [
     {
-      title: "Total Orders",
+      title: "Today's Total Orders",
       value: stats.totalOrders,
       iconColor: "bg-blue-400",
     },
