@@ -18,6 +18,7 @@ export const fetchRiderOrders = async (riderId, status) => {
   const res = await axios.get(`${BASE_URL}/rider/${riderId}/orders`, {
     params: { status },
   });
+  // Each order now includes the rating (if any) inside the order object
   return res.data;
 };
 

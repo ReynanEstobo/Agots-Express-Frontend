@@ -126,8 +126,15 @@ const RiderDashboard = () => {
       const onTheWay = await fetchRiderOrders(riderId, "on the way");
       const completed = await fetchRiderOrders(riderId, "completed");
 
+      // Combine active deliveries and remove duplicates by order id
+      const allActive = [...assigned, ...onTheWay];
+      const uniqueActive = allActive.filter(
+        (order, index, self) =>
+          index === self.findIndex((o) => o.id === order.id)
+      );
+
       setActiveDeliveries(
-        [...assigned, ...onTheWay].map((order) => ({
+        uniqueActive.map((order) => ({
           id: order.id,
           orderId: `ORD-${String(order.id).padStart(3, "0")}`,
           customer: order.customer_name,
@@ -139,8 +146,14 @@ const RiderDashboard = () => {
         }))
       );
 
+      // Deduplicate completed deliveries too
+      const uniqueCompleted = completed.filter(
+        (order, index, self) =>
+          index === self.findIndex((o) => o.id === order.id)
+      );
+
       setDeliveryHistory(
-        completed.map((order) => ({
+        uniqueCompleted.map((order) => ({
           id: order.id,
           orderId: `ORD-${String(order.id).padStart(3, "0")}`,
           customer: order.customer_name,
@@ -172,7 +185,7 @@ const RiderDashboard = () => {
 
   useEffect(() => {
     if (riderId) fetchStats();
-  }, [riderId, deliveryHistory]);
+  }, [riderId]);
 
   // Accept delivery
   const handleAcceptDelivery = async (deliveryId) => {
@@ -304,22 +317,64 @@ const RiderDashboard = () => {
             marginBottom: "2rem",
           }}
         >
-          {[ 
-            { icon: Package, title: "Today's Deliveries", value: stats.totalDeliveries, color: "#0A1A3F", extra: `From delivery history` },
-            { icon: TrendingUp, title: "Today's Earnings", value: `₱${stats.totalEarnings}`, color: "#F2C94C", extra: `From ${stats.totalDeliveries} deliveries` },
-            { icon: Star, title: "Average Rating", value: stats.avgRating.toFixed(1), color: "#0A1A3F", extra: `Based on ${stats.totalReviews} reviews` },
+          {[
+            {
+              icon: Package,
+              title: "Today's Deliveries",
+              value: stats.totalDeliveries,
+              color: "#0A1A3F",
+              extra: `From delivery history`,
+            },
+            {
+              icon: TrendingUp,
+              title: "Today's Earnings",
+              value: `₱${stats.totalEarnings}`,
+              color: "#F2C94C",
+              extra: `From ${stats.totalDeliveries} deliveries`,
+            },
+            {
+              icon: Star,
+              title: "Average Rating",
+              value: stats.avgRating.toFixed(1),
+              color: "#0A1A3F",
+              extra: `Based on ${stats.totalReviews} reviews`,
+            },
           ].map((card, idx) => (
             <Card key={idx}>
               <CardHeader style={{ paddingBottom: "0.75rem" }}>
-                <CardTitle style={{ fontSize: "0.875rem", fontWeight: "500", display: "flex", alignItems: "center", gap: "0.5rem", color: "#6B7280" }}>
-                  <card.icon style={{ width: "1rem", height: "1rem" }} /> {card.title}
+                <CardTitle
+                  style={{
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    color: "#6B7280",
+                  }}
+                >
+                  <card.icon style={{ width: "1rem", height: "1rem" }} />{" "}
+                  {card.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div style={{ fontSize: "1.875rem", fontWeight: "700", color: card.color }}>
+                <div
+                  style={{
+                    fontSize: "1.875rem",
+                    fontWeight: "700",
+                    color: card.color,
+                  }}
+                >
                   {card.value}
                 </div>
-                <p style={{ fontSize: "0.75rem", color: "#6B7280", marginTop: "0.25rem" }}>{card.extra}</p>
+                <p
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "#6B7280",
+                    marginTop: "0.25rem",
+                  }}
+                >
+                  {card.extra}
+                </p>
               </CardContent>
             </Card>
           ))}
@@ -366,7 +421,12 @@ const RiderDashboard = () => {
                       }}
                     >
                       <div>
-                        <CardTitle style={{ fontSize: "1.125rem", marginBottom: "0.25rem" }}>
+                        <CardTitle
+                          style={{
+                            fontSize: "1.125rem",
+                            marginBottom: "0.25rem",
+                          }}
+                        >
                           {delivery.orderId}
                         </CardTitle>
                         <p style={{ fontSize: "0.875rem", color: "#6B7280" }}>
@@ -384,45 +444,160 @@ const RiderDashboard = () => {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "1.5rem" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
-                          <MapPin style={{ width: "1.25rem", height: "1.25rem", color: "#6B7280", marginTop: "0.125rem" }} />
+                  <CardContent
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "1.5rem",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2,1fr)",
+                        gap: "1.5rem",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "1rem",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "0.5rem",
+                          }}
+                        >
+                          <MapPin
+                            style={{
+                              width: "1.25rem",
+                              height: "1.25rem",
+                              color: "#6B7280",
+                              marginTop: "0.125rem",
+                            }}
+                          />
                           <div>
-                            <p style={{ fontWeight: 500 }}>{delivery.customer}</p>
-                            <p style={{ fontSize: "0.875rem", color: "#6B7280" }}>{delivery.address}</p>
+                            <p style={{ fontWeight: 500 }}>
+                              {delivery.customer}
+                            </p>
+                            <p
+                              style={{ fontSize: "0.875rem", color: "#6B7280" }}
+                            >
+                              {delivery.address}
+                            </p>
                           </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                          <Phone style={{ width: "1.25rem", height: "1.25rem", color: "#6B7280" }} />
-                          <p style={{ fontSize: "0.875rem" }}>{delivery.phone}</p>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                          }}
+                        >
+                          <Phone
+                            style={{
+                              width: "1.25rem",
+                              height: "1.25rem",
+                              color: "#6B7280",
+                            }}
+                          />
+                          <p style={{ fontSize: "0.875rem" }}>
+                            {delivery.phone}
+                          </p>
                         </div>
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>Items</span>
-                          <span style={{ fontWeight: 700 }}>{delivery.items}</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.75rem",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <span
+                            style={{ fontSize: "0.875rem", fontWeight: 500 }}
+                          >
+                            Items
+                          </span>
+                          <span style={{ fontWeight: 700 }}>
+                            {delivery.items}
+                          </span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>Amount</span>
-                          <span style={{ fontWeight: 700 }}>{delivery.amount}</span>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <span
+                            style={{ fontSize: "0.875rem", fontWeight: 500 }}
+                          >
+                            Amount
+                          </span>
+                          <span style={{ fontWeight: 700 }}>
+                            {delivery.amount}
+                          </span>
                         </div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "0.75rem", paddingTop: "0.5rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "0.75rem",
+                        paddingTop: "0.5rem",
+                      }}
+                    >
                       {delivery.status === "assigned" ? (
-                        <Button style={{ flex: 1, backgroundColor: "#F2C94C", color: "#0A1A3F" }} onClick={() => handleAcceptDelivery(delivery.id)}>
-                          <CheckCircle2 style={{ width: "1rem", height: "1rem", marginRight: "0.5rem" }} />
+                        <Button
+                          style={{
+                            flex: 1,
+                            backgroundColor: "#F2C94C",
+                            color: "#0A1A3F",
+                          }}
+                          onClick={() => handleAcceptDelivery(delivery.id)}
+                        >
+                          <CheckCircle2
+                            style={{
+                              width: "1rem",
+                              height: "1rem",
+                              marginRight: "0.5rem",
+                            }}
+                          />
                           Accept Delivery
                         </Button>
                       ) : (
-                        <Button style={{ flex: 1, backgroundColor: "#2BA94C", color: "#FFF" }} onClick={() => handleMarkDelivered(delivery.id)}>
-                          <CheckCircle2 style={{ width: "1rem", height: "1rem", marginRight: "0.5rem" }} />
+                        <Button
+                          style={{
+                            flex: 1,
+                            backgroundColor: "#2BA94C",
+                            color: "#FFF",
+                          }}
+                          onClick={() => handleMarkDelivered(delivery.id)}
+                        >
+                          <CheckCircle2
+                            style={{
+                              width: "1rem",
+                              height: "1rem",
+                              marginRight: "0.5rem",
+                            }}
+                          />
                           Mark as Delivered
                         </Button>
                       )}
-                      <Button variant="outline" style={{ flex: 1 }} onClick={() => handleViewInfo(delivery)}>
+                      <Button
+                        variant="outline"
+                        style={{ flex: 1 }}
+                        onClick={() => handleViewInfo(delivery)}
+                      >
                         View Info
                       </Button>
                     </div>
@@ -433,38 +608,92 @@ const RiderDashboard = () => {
           </TabsContent>
 
           {/* Delivery History */}
-          <TabsContent value="history" className="space-y-4">
-            {deliveryHistory.length === 0 ? (
-              <Card>
-                <CardContent style={{ padding: "3rem 1rem", textAlign: "center" }}>
-                  <Package style={{ height: "3rem", width: "3rem", margin: "0 auto 1rem", color: "#6B7280" }} />
-                  <p style={{ color: "#6B7280" }}>No delivery history</p>
-                </CardContent>
-              </Card>
-            ) : (
-              deliveryHistory.map((delivery) => {
-                const completedDate = delivery.completedAt
-                  ? new Date(delivery.completedAt).toLocaleString("en-PH")
-                  : "-";
-                return (
-                  <Card key={delivery.id} style={{ marginBottom: "1rem" }}>
-                    <CardContent style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
-                      <div>
-                        <p style={{ fontWeight: 500 }}>{delivery.customer}</p>
-                        <p style={{ fontSize: "0.875rem", color: "#6B7280", marginTop: "0.25rem" }}>
-                          {delivery.orderId} • Completed on {completedDate}
-                        </p>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <p style={{ fontWeight: 700, color: "#F2C94C" }}>{delivery.amount}</p>
-                        <p style={{ fontSize: "0.875rem", color: "#6B7280", marginTop: "0.25rem" }}>Rating: {delivery.rating} ⭐</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </TabsContent>
+          {/* Delivery History */}
+<TabsContent value="history" className="space-y-4">
+  {deliveryHistory.length === 0 ? (
+    <Card>
+      <CardContent style={{ padding: "3rem 1rem", textAlign: "center" }}>
+        <Package
+          style={{
+            height: "3rem",
+            width: "3rem",
+            margin: "0 auto 1rem",
+            color: "#6B7280",
+          }}
+        />
+        <p style={{ color: "#6B7280" }}>No delivery history</p>
+      </CardContent>
+    </Card>
+  ) : (
+    deliveryHistory.map((delivery) => {
+      const completedDate = delivery.completedAt
+        ? new Date(delivery.completedAt).toLocaleString("en-PH")
+        : "-";
+      return (
+        <Card key={delivery.id} style={{ marginBottom: "1rem" }}>
+          <CardContent
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "1rem",
+            }}
+          >
+            <div>
+              <p style={{ fontWeight: 500, fontSize: "1rem" }}>
+                {delivery.customer}
+              </p>
+              <p
+                style={{
+                  fontSize: "0.875rem",
+                  color: "#6B7280",
+                  marginTop: "0.25rem",
+                }}
+              >
+                {delivery.orderId} • Completed on {completedDate}
+              </p>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <p
+                style={{
+                  fontWeight: 700,
+                  color: "#0A1A3F",
+                  fontSize: "1rem",
+                }}
+              >
+                {delivery.amount}
+              </p>
+
+              {/* Green Filled / Dark Gray Empty Star Rating */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.25rem",
+                  justifyContent: "flex-end",
+                  marginTop: "0.5rem",
+                }}
+              >
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    style={{
+                      width: "1.5rem",
+                      height: "1.5rem",
+                      color: i < delivery.rating ? "#22C55E" : "#4B5563",
+                      fill: i < delivery.rating ? "#22C55E" : "none",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    })
+  )}
+</TabsContent>
+
         </Tabs>
       </div>
 
