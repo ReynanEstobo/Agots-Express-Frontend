@@ -1,98 +1,24 @@
-import { Home, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import {
+  Flame,
+  Gift,
+  Heart as HeartIcon,
+  Home,
+  IceCream,
+  Search,
+  ShoppingCart,
+  Star,
+  Zap,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { fetchMenuItems } from "../api/MenuAPI";
 import CartSheet from "../components/CartSheet";
 import { useCart } from "../contexts/CartContext";
 import { useToast } from "../hooks/use-toast";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
-import { Card, CardContent } from "../ui/Card";
 import { Input } from "../ui/Input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/Tabs";
-
-const menuItems = {
-  "Main Course": [
-    {
-      id: 1,
-      name: "Chicken Adobo",
-      price: 280,
-      description: "Classic Filipino braised chicken in soy sauce and vinegar",
-      category: "Main Course",
-    },
-    {
-      id: 2,
-      name: "Pork Adobo",
-      price: 300,
-      description: "Tender pork belly in traditional adobo sauce",
-      category: "Main Course",
-    },
-    {
-      id: 3,
-      name: "Sinigang na Baboy",
-      price: 350,
-      description: "Sour pork soup with tamarind and vegetables",
-      category: "Main Course",
-    },
-    {
-      id: 4,
-      name: "Kare-Kare",
-      price: 420,
-      description: "Oxtail stew in rich peanut sauce with vegetables",
-      category: "Main Course",
-    },
-  ],
-  Appetizer: [
-    {
-      id: 9,
-      name: "Lumpiang Shanghai",
-      price: 180,
-      description: "Crispy fried spring rolls with ground pork",
-      category: "Appetizer",
-    },
-    {
-      id: 10,
-      name: "Fresh Lumpia",
-      price: 150,
-      description: "Fresh vegetables wrapped in crepe with peanut sauce",
-      category: "Appetizer",
-    },
-  ],
-  Dessert: [
-    {
-      id: 16,
-      name: "Halo-Halo",
-      price: 150,
-      description:
-        "Mixed shaved ice with sweet beans, fruits, and ube ice cream",
-      category: "Dessert",
-    },
-    {
-      id: 17,
-      name: "Leche Flan",
-      price: 120,
-      description: "Creamy caramel custard",
-      category: "Dessert",
-    },
-  ],
-  Beverage: [
-    {
-      id: 20,
-      name: "Calamansi Juice",
-      price: 80,
-      description: "Freshly squeezed Philippine lime juice",
-      category: "Beverage",
-    },
-  ],
-  "Combo Meal": [
-    {
-      id: 23,
-      name: "Adobo Combo",
-      price: 500,
-      description: "Chicken Adobo + Rice + Drink",
-      category: "Combo Meal",
-    },
-  ],
-};
 
 const tabs = [
   { key: "Main Course", label: "Main Course" },
@@ -102,11 +28,63 @@ const tabs = [
   { key: "Combo Meal", label: "Combo Meal" },
 ];
 
+const getCategoryColor = (category) => {
+  switch (category) {
+    case "Best Seller":
+      return "bg-yellow-500 text-white";
+    case "Most Bought":
+      return "bg-blue-500 text-white";
+    case "New Arrival":
+      return "bg-green-500 text-white";
+    case "Limited Offer":
+      return "bg-orange-500 text-white";
+    case "Recommended":
+      return "bg-pink-500 text-white";
+    case "Specialty":
+      return "bg-purple-500 text-white";
+    default:
+      return "bg-gray-200 text-[#0A1A3F]";
+  }
+};
+
+const getCategoryIcon = (category) => {
+  switch (category) {
+    case "Best Seller":
+      return <Flame className="h-4 w-4 text-white" />;
+    case "Most Bought":
+      return <Star className="h-4 w-4 text-white" />;
+    case "New Arrival":
+      return <Zap className="h-4 w-4 text-white" />;
+    case "Limited Offer":
+      return <Gift className="h-4 w-4 text-white" />;
+    case "Recommended":
+      return <HeartIcon className="h-4 w-4 text-white" />;
+    case "Specialty":
+      return <IceCream className="h-4 w-4 text-white" />;
+    default:
+      return null;
+  }
+};
+
 export default function OrderMenu() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("Main Course");
+  const [menuItems, setMenuItems] = useState([]);
   const { addToCart } = useCart();
   const { addToast } = useToast();
+
+  const loadMenu = async () => {
+    try {
+      const data = await fetchMenuItems();
+      setMenuItems(data || []);
+    } catch (err) {
+      console.error("Failed to fetch menu items:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadMenu();
+  }, []);
 
   const filteredItems = (items) =>
     items.filter(
@@ -121,31 +99,54 @@ export default function OrderMenu() {
   };
 
   const MenuItemCard = ({ item }) => (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardContent className="p-6 space-y-3">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <h3 className="font-bold text-lg mb-1">{item.name}</h3>
-            <p className="text-sm text-[#4C4C4C] mb-2">{item.description}</p>
-            <Badge className="text-xs bg-[#E5E5E5] text-[#0A1A3F]">
-              {item.category}
+    <div className="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer group h-72">
+      {item.image && (
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-90 transition-transform duration-500 group-hover:scale-105"
+          style={{
+            backgroundImage: `url(http://localhost:5000/uploads/menu/${item.image})`,
+          }}
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+
+      <div className="absolute bottom-4 left-4 z-20 flex flex-col space-y-1">
+        <h3 className="text-lg font-extrabold text-white drop-shadow-lg">
+          {item.name}
+        </h3>
+        <p className="text-sm font-semibold text-yellow-300 drop-shadow-lg">
+          ₱{item.price}
+        </p>
+      </div>
+
+      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-4 space-y-2">
+        <p className="text-sm text-gray-200">{item.description}</p>
+        <div className="flex gap-2 flex-wrap justify-center">
+          {item.category && item.category !== "None" && (
+            <Badge
+              className={`flex items-center gap-1 ${getCategoryColor(
+                item.category
+              )} text-xs px-2 py-1 rounded-full`}
+            >
+              {getCategoryIcon(item.category)} {item.category}
             </Badge>
-          </div>
+          )}
+          <Badge className="bg-gray-200 text-gray-800 flex items-center gap-1 text-xs px-2 py-1 rounded-full">
+            {item.group}
+          </Badge>
         </div>
-        <div className="flex items-center justify-between pt-2">
-          <span className="text-2xl font-bold text-[#F2C94C]">
-            ₱{item.price}
-          </span>
-          <Button
-            onClick={() => handleAddToCart(item)}
-            style={{ backgroundColor: "#F2C94C", color: "#0A1A3F" }}
-            className="hover:bg-[#D4B13D] flex items-center gap-2 px-4 py-2 rounded-lg"
-          >
-            <Plus className="h-4 w-4" /> Add to Cart
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div className="absolute bottom-2 right-2 z-20">
+        <Button
+          onClick={() => handleAddToCart(item)}
+          style={{ backgroundColor: "#F2C94C", color: "#0A1A3F" }}
+          className="hover:bg-[#D4B13D] flex items-center justify-center p-2 rounded-lg"
+        >
+          <ShoppingCart className="h-5 w-5" />
+        </Button>
+      </div>
+    </div>
   );
 
   return (
@@ -153,7 +154,6 @@ export default function OrderMenu() {
       className="min-h-screen"
       style={{ backgroundColor: "#F5F5F5", color: "#0A1A3F" }}
     >
-      {/* Header */}
       <header
         className="sticky top-0 border-b border-[#374A6B] z-40"
         style={{ backgroundColor: "#0A1A3F", color: "#FFFFFF" }}
@@ -194,7 +194,6 @@ export default function OrderMenu() {
       </header>
 
       <div className="container mx-auto px-6 py-8">
-        {/* Search */}
         <div className="mb-8 relative max-w-xl mx-auto">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#4C4C4C]" />
           <Input
@@ -210,7 +209,6 @@ export default function OrderMenu() {
           />
         </div>
 
-        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-5 mb-8">
             {tabs.map((tab) => (
@@ -222,8 +220,10 @@ export default function OrderMenu() {
 
           {tabs.map((tab) => (
             <TabsContent key={tab.key} value={tab.key}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredItems(menuItems[tab.key]).map((item) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {filteredItems(
+                  menuItems.filter((item) => item.group === tab.key)
+                ).map((item) => (
                   <MenuItemCard key={item.id} item={item} />
                 ))}
               </div>
