@@ -12,7 +12,7 @@ import {
   Star,
   Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchFeaturedDishes, fetchLandingStats } from "../api/LandingAPI";
 import { useSocket } from "../contexts/SocketContext";
@@ -57,6 +57,48 @@ const getCategoryIcon = (category) => {
       return null;
   }
 };
+
+const DishCard = React.memo(({ dish }) => (
+  <Card className="relative overflow-hidden h-72 rounded-2xl cursor-pointer group">
+    {/* Background Image */}
+    {dish.image && (
+      <div
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105 pointer-events-none"
+        style={{
+          backgroundImage: `url(http://localhost:5000/uploads/menu/${dish.image})`,
+        }}
+      />
+    )}
+
+    {/* Gradient overlay */}
+    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+
+    {/* Info at bottom */}
+    <div className="absolute bottom-4 left-4 z-10 text-white">
+      <h3 className="text-lg font-semibold drop-shadow-lg">{dish.name}</h3>
+      <p className="text-sm font-medium drop-shadow-lg">₱{dish.price}</p>
+    </div>
+
+    {/* Hover overlay */}
+    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-4 space-y-2 z-20">
+      <p className="text-sm text-gray-200">{dish.description}</p>
+      <div className="flex gap-2 flex-wrap justify-center">
+        {dish.category && dish.category !== "None" && (
+          <Badge
+            className={`flex items-center gap-1 ${getCategoryColor(
+              dish.category
+            )} text-xs px-2 py-1 rounded-full`}
+          >
+            {getCategoryIcon(dish.category)} {dish.category}
+          </Badge>
+        )}
+        <Badge className="bg-gray-200 text-gray-800 flex items-center gap-1 text-xs px-2 py-1 rounded-full">
+          {dish.group}
+        </Badge>
+      </div>
+    </div>
+  </Card>
+));
 
 const Landing = () => {
   const socket = useSocket();
@@ -155,41 +197,6 @@ const Landing = () => {
       socket.off("landingStatsUpdated");
     };
   }, [socket]);
-
-  const DishCard = ({ dish }) => (
-    <Card className="hover:shadow-xl transition-shadow relative overflow-hidden h-72 rounded-2xl cursor-pointer group">
-      {dish.image && (
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-90 transition-transform duration-500 group-hover:scale-105"
-          style={{
-            backgroundImage: `url(http://localhost:5000/uploads/menu/${dish.image})`,
-          }}
-        />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-      <div className="absolute bottom-4 left-4 z-10 text-white">
-        <h3 className="text-lg font-semibold drop-shadow-lg">{dish.name}</h3>
-        <p className="text-sm font-medium drop-shadow-lg">₱{dish.price}</p>
-      </div>
-      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-4 space-y-2">
-        <p className="text-sm text-gray-200">{dish.description}</p>
-        <div className="flex gap-2 flex-wrap justify-center">
-          {dish.category && dish.category !== "None" && (
-            <Badge
-              className={`flex items-center gap-1 ${getCategoryColor(
-                dish.category
-              )} text-xs px-2 py-1 rounded-full`}
-            >
-              {getCategoryIcon(dish.category)} {dish.category}
-            </Badge>
-          )}
-          <Badge className="bg-gray-200 text-gray-800 flex items-center gap-1 text-xs px-2 py-1 rounded-full">
-            {dish.group}
-          </Badge>
-        </div>
-      </div>
-    </Card>
-  );
 
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
