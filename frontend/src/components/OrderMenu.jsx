@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import CartSheet from "../components/CartSheet";
 import { useCart } from "../contexts/CartContext";
+import { useToast } from "../hooks/use-toast";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card, CardContent } from "../ui/Card";
@@ -101,13 +102,11 @@ const tabs = [
   { key: "Combo Meal", label: "Combo Meal" },
 ];
 
-const getCategoryColor = (category) => "bg-[#E5E5E5] text-[#0A1A3F]";
-const getCategoryIcon = (category) => null;
-
 export default function OrderMenu() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("Main Course");
   const { addToCart } = useCart();
+  const { addToast } = useToast();
 
   const filteredItems = (items) =>
     items.filter(
@@ -116,18 +115,20 @@ export default function OrderMenu() {
         item.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+  const handleAddToCart = (item) => {
+    addToCart(item);
+    addToast({ description: `${item.name} added to cart` });
+  };
+
   const MenuItemCard = ({ item }) => (
-    <Card
-      style={{ backgroundColor: "#FFFFFF", color: "#0A1A3F" }}
-      className="hover:shadow-lg transition-shadow"
-    >
+    <Card className="hover:shadow-lg transition-shadow">
       <CardContent className="p-6 space-y-3">
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <h3 className="font-bold text-lg mb-1">{item.name}</h3>
             <p className="text-sm text-[#4C4C4C] mb-2">{item.description}</p>
-            <Badge className={`text-xs ${getCategoryColor(item.category)}`}>
-              {getCategoryIcon(item.category)} {item.category}
+            <Badge className="text-xs bg-[#E5E5E5] text-[#0A1A3F]">
+              {item.category}
             </Badge>
           </div>
         </div>
@@ -136,7 +137,7 @@ export default function OrderMenu() {
             ₱{item.price}
           </span>
           <Button
-            onClick={() => addToCart(item)}
+            onClick={() => handleAddToCart(item)}
             style={{ backgroundColor: "#F2C94C", color: "#0A1A3F" }}
             className="hover:bg-[#D4B13D] flex items-center gap-2 px-4 py-2 rounded-lg"
           >
@@ -149,21 +150,17 @@ export default function OrderMenu() {
 
   return (
     <div
-      style={{ backgroundColor: "#F5F5F5", color: "#0A1A3F" }}
       className="min-h-screen"
+      style={{ backgroundColor: "#F5F5F5", color: "#0A1A3F" }}
     >
       {/* Header */}
       <header
-        style={{ backgroundColor: "#0A1A3F", color: "#FFFFFF" }}
         className="sticky top-0 border-b border-[#374A6B] z-40"
+        style={{ backgroundColor: "#0A1A3F", color: "#FFFFFF" }}
       >
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div
-              style={{ backgroundColor: "#F2C94C", color: "#0A1A3F" }}
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-            >
-              {/* Use the SVG from your DashboardSidebar */}
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#F2C94C] text-[#0A1A3F]">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="48"

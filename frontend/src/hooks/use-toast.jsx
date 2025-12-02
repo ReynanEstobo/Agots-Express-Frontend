@@ -1,47 +1,53 @@
-// use-toast.jsx
 import { X } from "lucide-react";
 import { createContext, useContext, useRef, useState } from "react";
 
-// Toast context
 const ToastContext = createContext();
-
-const TOAST_REMOVE_DELAY = 4000; // 4 seconds
+const TOAST_REMOVE_DELAY = 3000; // 3 seconds
 let toastCount = 0;
 
-// Generate unique ID for each toast
 function genId() {
   toastCount = (toastCount + 1) % Number.MAX_SAFE_INTEGER;
   return toastCount.toString();
 }
 
-// ToastProvider component
+// Notification sound (only for toast popups)
+const notificationSound = new Audio("/preview.mp3"); // must be in public folder
+
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
   const toastTimeouts = useRef({});
 
-  // Add a new toast
   const addToast = (toast) => {
     const id = genId();
     const newToast = {
       ...toast,
       id,
       duration: toast.duration || TOAST_REMOVE_DELAY,
+      isVisible: true,
     };
 
-    setToasts((prev) => [...prev, newToast]);
+    // Play sound only if toast.playSound !== false
+    if (toast.playSound !== false) {
+      notificationSound.currentTime = 0;
+      notificationSound.play().catch(() => {});
+    }
 
-    // Auto-remove after duration
-    toastTimeouts.current[id] = setTimeout(
-      () => removeToast(id),
-      newToast.duration
-    );
+    // Show only one toast at a time
+    setToasts([newToast]);
+
+    // Auto remove with fade-out
+    toastTimeouts.current[id] = setTimeout(() => {
+      setToasts((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, isVisible: false } : t))
+      );
+      setTimeout(() => removeToast(id), 500); // remove after fade-out
+    }, newToast.duration);
 
     return id;
   };
 
-  // Remove a toast manually
   const removeToast = (id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    setToasts([]);
     if (toastTimeouts.current[id]) {
       clearTimeout(toastTimeouts.current[id]);
       delete toastTimeouts.current[id];
@@ -56,31 +62,35 @@ export const ToastProvider = ({ children }) => {
   );
 };
 
-// Hook to use the toast context
 export const useToast = () => {
   const context = useContext(ToastContext);
-  if (!context) throw new Error("useToast must be used within a ToastProvider");
+  if (!context) throw new Error("useToast must be used within ToastProvider");
   return context;
 };
 
-// Toast container UI
 const ToastContainer = ({ toasts, removeToast }) => {
   return (
-    <div className="fixed top-4 right-4 flex flex-col gap-3 z-50">
+    <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3 z-50">
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="bg-gray-900 text-white rounded-md shadow-md p-4 flex items-start justify-between w-80 animate-slide-in"
+          className={`bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400
+                     text-gray-900 rounded-lg shadow-lg p-4 flex items-start justify-between w-80 max-w-full
+                     border-l-4 border-yellow-600
+                     transition-opacity duration-700
+                     ${toast.isVisible ? "opacity-100" : "opacity-0"}`}
         >
           <div className="flex-1">
-            {toast.title && <div className="font-semibold">{toast.title}</div>}
+            {toast.title && (
+              <div className="font-semibold text-sm mb-1">{toast.title}</div>
+            )}
             {toast.description && (
-              <div className="text-sm text-gray-200">{toast.description}</div>
+              <div className="text-sm text-gray-800">{toast.description}</div>
             )}
           </div>
           <button
             onClick={() => removeToast(toast.id)}
-            className="ml-3 text-gray-400 hover:text-white"
+            className="ml-3 text-gray-600 hover:text-gray-900 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -89,13 +99,3 @@ const ToastContainer = ({ toasts, removeToast }) => {
     </div>
   );
 };
-
-/* Tailwind Animation (Add to your CSS or Tailwind config)
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out forwards;
-}
-@keyframes slideIn {
-  0% { opacity: 0; transform: translateX(100%) translateY(-10px); }
-  100% { opacity: 1; transform: translateX(0) translateY(0); }
-}
-*/

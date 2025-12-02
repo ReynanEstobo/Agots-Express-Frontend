@@ -11,9 +11,20 @@ export function CartProvider({ children }) {
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Animation states
+  const [animateCount, setAnimateCount] = useState(false);
+  const [animateIcon, setAnimateIcon] = useState(false);
+
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(items));
   }, [items]);
+
+  const triggerAnimations = () => {
+    setAnimateCount(true);
+    setTimeout(() => setAnimateCount(false), 300);
+    setAnimateIcon(true);
+    setTimeout(() => setAnimateIcon(false), 300);
+  };
 
   const addToCart = (item, quantity = 1) => {
     setItems((prev) => {
@@ -22,15 +33,20 @@ export function CartProvider({ children }) {
         addToast({
           title: "Updated cart",
           description: `${item.name} quantity updated`,
+          playSound: true, // sound only here
         });
+        triggerAnimations();
         return prev.map((i) =>
           i.id === item.id ? { ...i, quantity: i.quantity + quantity } : i
         );
       }
+
       addToast({
         title: "Added to cart",
         description: `${item.name} added to your cart`,
+        playSound: true, // sound only here
       });
+      triggerAnimations();
       return [...prev, { ...item, quantity }];
     });
   };
@@ -40,6 +56,7 @@ export function CartProvider({ children }) {
     addToast({
       title: "Removed from cart",
       description: "Item removed from your cart",
+      playSound: false, // no sound for removal
     });
   };
 
@@ -58,12 +75,25 @@ export function CartProvider({ children }) {
     localStorage.removeItem("cart");
   };
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, total, itemCount }}
+      value={{
+        items,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        total,
+        itemCount,
+        animateCount,
+        animateIcon,
+      }}
     >
       {children}
     </CartContext.Provider>

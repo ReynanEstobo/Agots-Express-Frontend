@@ -63,3 +63,36 @@
   --sidebar-border: 220 40% 25%;
   --sidebar-ring: 45 87% 62%;
 }
+
+@keyframes toastFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(50%) translateY(10px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(-10px) translateY(0);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@keyframes toastFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(50%) translateY(10px);
+  }
+}
+.animate-toast-fade-in {
+  animation: toastFadeIn 0.5s ease forwards;
+}
+.animate-toast-fade-out {
+  animation: toastFadeOut 0.5s ease forwards;
+}
