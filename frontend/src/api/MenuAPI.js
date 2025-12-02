@@ -3,9 +3,9 @@ import axios from "axios";
 const API_URL = "http://localhost:5000/api/menu";
 
 // Generic API request handler
-const apiRequest = async (method, url, data = null) => {
+const apiRequest = async (method, url, data = null, headers = {}) => {
   try {
-    const config = { method, url, data };
+    const config = { method, url, data, headers };
     const response = await axios(config);
     return response.data;
   } catch (err) {
@@ -22,38 +22,24 @@ const apiRequest = async (method, url, data = null) => {
 // Fetch all menu items
 export const fetchMenuItems = async () => apiRequest("GET", API_URL);
 
-// Create a new menu item
-export const createMenuItem = async (menuItem) => {
-  if (!menuItem.name || !menuItem.price || !menuItem.group) {
+// Create a new menu item (with FormData for image upload)
+export const createMenuItem = async (menuItemFormData) => {
+  if (!menuItemFormData.get("name") || !menuItemFormData.get("price") || !menuItemFormData.get("group")) {
     throw new Error("Name, price, and group are required fields.");
   }
 
-  const data = {
-    name: menuItem.name,
-    category: menuItem.category === "None" ? null : menuItem.category,
-    price: parseFloat(menuItem.price),
-    description: menuItem.description || null,
-    group: menuItem.group,
-  };
-
-  return apiRequest("POST", API_URL, data);
+  const headers = { "Content-Type": "multipart/form-data" };
+  return apiRequest("POST", API_URL, menuItemFormData, headers);
 };
 
-// Update a menu item
-export const updateMenuItem = async (id, updatedData) => {
-  if (!updatedData.name || !updatedData.price || !updatedData.group) {
+// Update a menu item (with FormData for image upload)
+export const updateMenuItem = async (id, menuItemFormData) => {
+  if (!menuItemFormData.get("name") || !menuItemFormData.get("price") || !menuItemFormData.get("group")) {
     throw new Error("Name, price, and group are required fields.");
   }
 
-  const data = {
-    name: updatedData.name,
-    category: updatedData.category === "None" ? null : updatedData.category,
-    price: parseFloat(updatedData.price),
-    description: updatedData.description || null,
-    group: updatedData.group,
-  };
-
-  return apiRequest("PUT", `${API_URL}/${id}`, data);
+  const headers = { "Content-Type": "multipart/form-data" };
+  return apiRequest("PUT", `${API_URL}/${id}`, menuItemFormData, headers);
 };
 
 // Delete a menu item

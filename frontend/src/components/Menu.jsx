@@ -16,16 +16,9 @@ import {
 import { useEffect, useState } from "react";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
-import { Card, CardContent } from "../ui/Card";
 import { DashboardHeader } from "../ui/DashboardHeader";
 import { DashboardSidebar } from "../ui/DashboardSidebar";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/Dialog";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "../ui/Dialog";
 import { Input } from "../ui/Input";
 import {
   Select,
@@ -44,7 +37,6 @@ import {
   updateMenuItem,
 } from "../api/MenuAPI";
 
-// Categories for dropdown
 const categories = [
   "None",
   "Best Seller",
@@ -55,7 +47,6 @@ const categories = [
   "Specialty",
 ];
 
-// Groups for tabs
 const groups = [
   "Main Course",
   "Dessert",
@@ -64,7 +55,6 @@ const groups = [
   "Combo Meal",
 ];
 
-// Mapping groups to StatsCard icons & background color keys
 const groupStatsConfig = {
   "Main Course": { icon: Drumstick, iconColor: "bg-red-500" },
   Dessert: { icon: IceCream, iconColor: "bg-pink-500" },
@@ -73,7 +63,6 @@ const groupStatsConfig = {
   "Combo Meal": { icon: Plus, iconColor: "bg-indigo-500" },
 };
 
-// Category badge colors
 const getCategoryColor = (category) => {
   switch (category) {
     case "Best Seller":
@@ -93,7 +82,6 @@ const getCategoryColor = (category) => {
   }
 };
 
-// Category icons inside badges
 const getCategoryIcon = (category) => {
   switch (category) {
     case "Best Seller":
@@ -116,16 +104,13 @@ const getCategoryIcon = (category) => {
 export default function Menu() {
   const [menu, setMenu] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState({
-    name: "",
-    price: "",
-    description: "",
-    category: "None",
-    group: "Main Course",
-  });
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState("Main Course");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   // Fetch menu items
   const loadMenu = async () => {
@@ -142,15 +127,24 @@ export default function Menu() {
   }, []);
 
   const openModal = (item = null) => {
-    setSelectedItem(
-      item || {
+    if (item) {
+      setSelectedItem({ ...item, imageFile: null });
+      setImagePreview(
+        item.image ? `http://localhost:5000/uploads/menu/${item.image}` : null
+      );
+    } else {
+      setSelectedItem({
         name: "",
         price: "",
         description: "",
         category: "None",
         group: "Main Course",
-      }
-    );
+        image: null,
+        imageFile: null,
+        id: null,
+      });
+      setImagePreview(null);
+    }
     setModalOpen(true);
     setErrorMessage("");
     setSuccessMessage("");
@@ -159,10 +153,20 @@ export default function Menu() {
   const closeModal = () => {
     setModalOpen(false);
     setSelectedItem(null);
+    setImagePreview(null);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedItem((prev) => ({ ...prev, imageFile: file }));
+      setImagePreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSave = async () => {
-    const { name, price, description, category, group, id } = selectedItem;
+    const { name, price, description, category, group, id, imageFile, image } =
+      selectedItem;
 
     if (!name || !price || !description) {
       const missing = [];
@@ -174,16 +178,21 @@ export default function Menu() {
     }
 
     try {
-      const validCategory = category === "None" ? null : category;
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("price", price);
+      formData.append("description", description);
+      formData.append("category", category === "None" ? "" : category);
+      formData.append("group", group);
+
+      if (imageFile instanceof File) {
+        formData.append("image", imageFile);
+      } else if (image) {
+        formData.append("existingImage", image);
+      }
 
       if (id) {
-        const updated = await updateMenuItem(id, {
-          name,
-          price,
-          description,
-          category: validCategory,
-          group,
-        });
+        const updated = await updateMenuItem(id, formData);
         setMenu((prev) =>
           prev.map((item) =>
             item.id === id
@@ -192,13 +201,7 @@ export default function Menu() {
           )
         );
       } else {
-        const newItem = await createMenuItem({
-          name,
-          price,
-          description,
-          category: validCategory,
-          group,
-        });
+        const newItem = await createMenuItem(formData);
         setMenu([
           ...menu,
           { ...newItem, category: newItem.category || "None" },
@@ -212,62 +215,64 @@ export default function Menu() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const confirmDelete = (item) => {
+    setItemToDelete(item);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
     try {
-      await deleteMenuItem(id);
-      setMenu((prev) => prev.filter((item) => item.id !== id));
+      await deleteMenuItem(itemToDelete.id);
+      setMenu((prev) => prev.filter((item) => item.id !== itemToDelete.id));
+      setDeleteConfirmOpen(false);
+      setItemToDelete(null);
     } catch (err) {
       setErrorMessage("Failed to delete menu item: " + err.message);
     }
   };
 
-  const MenuItemCard = ({ item }) => {
-    return (
-      <Card className="hover:shadow-xl transition p-4">
-        <CardContent className="flex justify-between items-start gap-4">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-black">{item.name}</h3>
-            <p className="text-sm text-gray-500 mb-2">{item.description}</p>
-            <div className="flex gap-2">
-              {item.category && item.category !== "None" && (
-                <Badge
-                  className={`flex items-center gap-1 ${getCategoryColor(
-                    item.category
-                  )}`}
-                >
-                  {getCategoryIcon(item.category)} {item.category}
-                </Badge>
-              )}
-              <Badge className="bg-gray-200 text-gray-800 flex items-center gap-1">
-                {item.group}
-              </Badge>
-            </div>
-          </div>
-          <div className="text-right flex flex-col justify-between">
-            <div className="text-xl font-bold text-black mb-2">
-              {item.price}
-            </div>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => openModal(item)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleDelete(item.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
+  const MenuItemCard = ({ item }) => (
+    <div className="relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer group h-72">
+      {item.image && (
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-90 transition-transform duration-500 group-hover:scale-105"
+          style={{
+            backgroundImage: `url(http://localhost:5000/uploads/menu/${item.image})`,
+          }}
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+      <div className="absolute bottom-4 left-4 z-10 text-white">
+        <h3 className="text-lg font-semibold drop-shadow-lg">{item.name}</h3>
+        <p className="text-sm font-medium drop-shadow-lg">₱{item.price}</p>
+      </div>
+      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-4 space-y-2">
+        <p className="text-sm text-gray-200">{item.description}</p>
+        <div className="flex gap-2 flex-wrap justify-center">
+          {item.category && item.category !== "None" && (
+            <Badge
+              className={`flex items-center gap-1 ${getCategoryColor(
+                item.category
+              )} text-xs px-2 py-1 rounded-full`}
+            >
+              {getCategoryIcon(item.category)} {item.category}
+            </Badge>
+          )}
+          <Badge className="bg-gray-200 text-gray-800 flex items-center gap-1 text-xs px-2 py-1 rounded-full">
+            {item.group}
+          </Badge>
+        </div>
+      </div>
+      <div className="absolute top-2 right-2 flex flex-col gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <Button variant="ghost" size="icon" onClick={() => openModal(item)}>
+          <Edit className="h-4 w-4 text-white" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={() => confirmDelete(item)}>
+          <Trash2 className="h-4 w-4 text-white" />
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#F4F6F9]">
@@ -340,7 +345,7 @@ export default function Menu() {
 
             {groups.map((grp) => (
               <TabsContent key={grp} value={grp}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-4">
                   {menu
                     .filter((item) => item.group === grp)
                     .map((item) => (
@@ -351,22 +356,22 @@ export default function Menu() {
             ))}
           </Tabs>
 
-          {/* Modal */}
-          {modalOpen && (
+          {/* Add/Edit Modal */}
+          {modalOpen && selectedItem && (
             <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-              <DialogContent className="fixed top-1/2 left-1/2 w-full max-w-md -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-xl shadow-lg z-50">
-                <DialogHeader>
-                  <DialogTitle className="text-xl font-semibold text-center">
+              <DialogContent className="fixed top-1/2 left-1/2 max-w-lg w-full -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl overflow-y-auto max-h-[90vh] z-50">
+                <div className="flex items-center justify-between p-5 border-b border-gray-200">
+                  <DialogTitle className="text-2xl font-bold">
                     {selectedItem?.id ? "Edit Menu Item" : "Add Menu Item"}
                   </DialogTitle>
-                </DialogHeader>
-                <DialogClose asChild>
-                  <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                    X
-                  </button>
-                </DialogClose>
+                  <DialogClose asChild>
+                    <button className="text-gray-400 hover:text-gray-600 text-xl font-semibold">
+                      &times;
+                    </button>
+                  </DialogClose>
+                </div>
 
-                <div className="space-y-3 mt-2">
+                <div className="p-6 space-y-5">
                   <Input
                     name="name"
                     placeholder="Dish Name"
@@ -377,10 +382,11 @@ export default function Menu() {
                         name: e.target.value,
                       }))
                     }
+                    className="text-lg py-3"
                   />
                   <Input
                     name="price"
-                    placeholder="Price"
+                    placeholder="₱ Price"
                     value={selectedItem?.price}
                     onChange={(e) =>
                       setSelectedItem((prev) => ({
@@ -388,6 +394,7 @@ export default function Menu() {
                         price: e.target.value.replace(/[^\d]/g, ""),
                       }))
                     }
+                    className="text-lg py-3"
                   />
                   <Input
                     name="description"
@@ -399,16 +406,39 @@ export default function Menu() {
                         description: e.target.value,
                       }))
                     }
+                    className="text-lg py-3"
                   />
 
-                  {/* Category Dropdown */}
+                  {/* Image Upload */}
+                  <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors">
+                    <label className="text-gray-500 mb-2">Upload Image</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    {imagePreview ? (
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded-xl shadow-md mt-2 pointer-events-none"
+                      />
+                    ) : (
+                      <div className="text-gray-400">
+                        Drag & drop or click to upload
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Category & Group */}
                   <Select
                     value={selectedItem?.category}
                     onValueChange={(val) =>
                       setSelectedItem((prev) => ({ ...prev, category: val }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="text-lg py-3">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -420,14 +450,13 @@ export default function Menu() {
                     </SelectContent>
                   </Select>
 
-                  {/* Group Dropdown */}
                   <Select
                     value={selectedItem?.group}
                     onValueChange={(val) =>
                       setSelectedItem((prev) => ({ ...prev, group: val }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="text-lg py-3">
                       <SelectValue placeholder="Select group" />
                     </SelectTrigger>
                     <SelectContent>
@@ -440,11 +469,50 @@ export default function Menu() {
                   </Select>
                 </div>
 
-                <div className="flex justify-end gap-3 mt-6">
-                  <Button variant="secondary" onClick={closeModal}>
+                <div className="flex justify-end gap-4 p-6 border-t border-gray-200">
+                  <Button
+                    variant="secondary"
+                    onClick={closeModal}
+                    className="px-6 py-2 rounded-lg"
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={handleSave}>Save</Button>
+                  <Button onClick={handleSave} className="px-6 py-2 rounded-lg">
+                    Save
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {deleteConfirmOpen && (
+            <Dialog
+              open={deleteConfirmOpen}
+              onOpenChange={setDeleteConfirmOpen}
+            >
+              <DialogContent className="fixed top-1/2 left-1/2 max-w-md w-full -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 z-50">
+                <DialogTitle className="text-xl font-bold mb-4">
+                  Confirm Delete
+                </DialogTitle>
+                <p className="mb-6 text-gray-700">
+                  Are you sure you want to delete "{itemToDelete?.name}"? This
+                  action cannot be undone.
+                </p>
+                <div className="flex justify-end gap-4">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setDeleteConfirmOpen(false)}
+                    className="px-4 py-2 rounded-lg"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleDelete}
+                    className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    Delete
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>

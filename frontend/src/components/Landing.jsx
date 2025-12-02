@@ -104,7 +104,7 @@ const Landing = () => {
               Filipino dishes made with locally sourced ingredients and love.
             </p>
             <div className="flex items-center justify-center gap-4 pt-6">
-              <Link to="/order">
+              <Link to="/order-menu">
                 <Button className="bg-[#FFD966] text-[#0A1A3F] hover:bg-[#FFF3B0] text-lg px-8 transition-colors duration-300">
                   Order Now
                 </Button>
@@ -297,7 +297,6 @@ const Landing = () => {
                       <p className="text-[#9B9B9B]">
                         Everyday: 08:00 AM - 10:00 PM
                       </p>
-                      
                     </div>
                   </div>
                 </CardContent>
