@@ -2,44 +2,144 @@ import {
   Award,
   ChefHat,
   Clock,
+  Flame,
+  Gift,
+  Heart as HeartIcon,
+  IceCream,
   Mail,
   MapPin,
   Phone,
   Star,
   UtensilsCrossed,
+  Zap,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { fetchFeaturedDishes, fetchLandingStats } from "../api/LandingAPI";
+import { useSocket } from "../contexts/SocketContext";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card, CardContent } from "../ui/Card";
 
+const getCategoryColor = (category) => {
+  switch (category) {
+    case "Best Seller":
+      return "bg-yellow-500 text-white";
+    case "Most Bought":
+      return "bg-blue-500 text-white";
+    case "New Arrival":
+      return "bg-green-500 text-white";
+    case "Limited Offer":
+      return "bg-orange-500 text-white";
+    case "Recommended":
+      return "bg-pink-500 text-white";
+    case "Specialty":
+      return "bg-purple-500 text-white";
+    default:
+      return "bg-gray-300 text-black";
+  }
+};
+
+const getCategoryIcon = (category) => {
+  switch (category) {
+    case "Best Seller":
+      return <Flame className="h-4 w-4 text-white" />;
+    case "Most Bought":
+      return <Star className="h-4 w-4 text-white" />;
+    case "New Arrival":
+      return <Zap className="h-4 w-4 text-white" />;
+    case "Limited Offer":
+      return <Gift className="h-4 w-4 text-white" />;
+    case "Recommended":
+      return <HeartIcon className="h-4 w-4 text-white" />;
+    case "Specialty":
+      return <IceCream className="h-4 w-4 text-white" />;
+    default:
+      return null;
+  }
+};
+
 const Landing = () => {
-  const featuredDishes = [
-    {
-      name: "Chicken Adobo",
-      price: "₱280",
-      description: "Classic braised chicken in soy and vinegar",
-      image: "🍗",
-    },
-    {
-      name: "Lechon Kawali",
-      price: "₱380",
-      description: "Crispy deep-fried pork belly",
-      image: "🥓",
-    },
-    {
-      name: "Sinigang na Baboy",
-      price: "₱350",
-      description: "Sour pork soup with tamarind",
-      image: "🍲",
-    },
-    {
-      name: "Kare-Kare",
-      price: "₱420",
-      description: "Oxtail stew in rich peanut sauce",
-      image: "🍛",
-    },
-  ];
+  const socket = useSocket();
+  const [avgRating, setAvgRating] = useState(null);
+  const [totalCustomers, setTotalCustomers] = useState(null);
+  const [featuredDishes, setFeaturedDishes] = useState([]);
+
+  // Initial fetch
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await fetchLandingStats();
+        setAvgRating(Number(data.avgRating) || 0);
+        setTotalCustomers(Number(data.totalCustomers) || 0);
+      } catch (err) {
+        console.error("Failed to fetch stats:", err);
+        setAvgRating(0);
+        setTotalCustomers(0);
+      }
+    };
+
+    const loadFeaturedDishes = async () => {
+      try {
+        const data = await fetchFeaturedDishes();
+        setFeaturedDishes(data.slice(0, 4));
+      } catch (err) {
+        console.error("Failed to fetch featured dishes:", err);
+      }
+    };
+
+    loadStats();
+    loadFeaturedDishes();
+  }, []);
+
+  // Listen for live updates via socket
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("landingStatsUpdated", (updatedStats) => {
+      setAvgRating(Number(updatedStats.avgRating) || 0);
+      setTotalCustomers(Number(updatedStats.totalCustomers) || 0);
+    });
+
+    return () => {
+      socket.off("landingStatsUpdated");
+    };
+  }, [socket]);
+
+  const DishCard = ({ dish }) => (
+    <Card className="hover:shadow-xl transition-shadow relative overflow-hidden h-72 rounded-2xl cursor-pointer group">
+      {dish.image && (
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-90 transition-transform duration-500 group-hover:scale-105"
+          style={{
+            backgroundImage: `url(http://localhost:5000/uploads/menu/${dish.image})`,
+          }}
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+      <div className="absolute bottom-4 left-4 z-10 text-white">
+        <h3 className="text-lg font-semibold drop-shadow-lg">{dish.name}</h3>
+        <p className="text-sm font-medium drop-shadow-lg">₱{dish.price}</p>
+      </div>
+      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-4 space-y-2">
+        <p className="text-sm text-gray-200">{dish.description}</p>
+        <div className="flex gap-2 flex-wrap justify-center">
+          {dish.category && dish.category !== "None" && (
+            <Badge
+              className={`flex items-center gap-1 ${getCategoryColor(
+                dish.category
+              )} text-xs px-2 py-1 rounded-full`}
+            >
+              {getCategoryIcon(dish.category)} {dish.category}
+            </Badge>
+          )}
+          <Badge className="bg-gray-200 text-gray-800 flex items-center gap-1 text-xs px-2 py-1 rounded-full">
+            {dish.group}
+          </Badge>
+        </div>
+      </div>
+    </Card>
+  );
 
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
@@ -55,8 +155,6 @@ const Landing = () => {
                 Agot's Restaurant
               </span>
             </div>
-
-            {/* Centered Menu Links */}
             <div className="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <a
                 href="#menu"
@@ -77,7 +175,6 @@ const Landing = () => {
                 Contact
               </a>
             </div>
-
             <div className="flex items-center gap-3 z-10">
               <Link to="/login">
                 <Button className="bg-[#FFD966] text-[#0A1A3F] hover:bg-[#FFF3B0] transition-colors duration-300">
@@ -125,11 +222,17 @@ const Landing = () => {
                 </div>
               </div>
               <div className="space-y-1">
-                <div className="text-4xl font-bold text-[#FFD966]">50K+</div>
+                <div className="text-4xl font-bold text-[#FFD966]">
+                  {totalCustomers !== null
+                    ? totalCustomers.toLocaleString()
+                    : "..."}
+                </div>
                 <div className="text-sm text-[#FFFFFF]/70">Happy Customers</div>
               </div>
               <div className="space-y-1">
-                <div className="text-4xl font-bold text-[#FFD966]">4.8</div>
+                <div className="text-4xl font-bold text-[#FFD966]">
+                  {typeof avgRating === "number" ? avgRating.toFixed(1) : "..."}
+                </div>
                 <div className="text-sm text-[#FFFFFF]/70">Average Rating</div>
               </div>
             </div>
@@ -148,33 +251,11 @@ const Landing = () => {
               Taste our signature Filipino specialties
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredDishes.map((dish, idx) => (
-              <Card key={idx} className="hover:shadow-xl transition-shadow">
-                <CardContent className="p-6">
-                  <div className="text-6xl mb-4 text-center">{dish.image}</div>
-                  <h3 className="text-xl font-bold text-[#0A1A3F] mb-2">
-                    {dish.name}
-                  </h3>
-                  <p className="text-[#9B9B9B] text-sm mb-4">
-                    {dish.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-[#FFD966]">
-                      {dish.price}
-                    </span>
-                    <Link to="/order-menu">
-                      <Button className="bg-[#FFD966] hover:bg-[#FFF3B0] transition-colors duration-300">
-                        Order
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
+            {featuredDishes.map((dish) => (
+              <DishCard key={dish.id} dish={dish} />
             ))}
           </div>
-
           <div className="text-center mt-12">
             <Link to="/order-menu">
               <Button className="bg-[#FFD966]/20 text-[#0A1A3F] hover:bg-[#FFF3B0]/40 transition-colors duration-300">
@@ -206,7 +287,6 @@ const Landing = () => {
                 </p>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-8 text-center space-y-4">
                 <div className="w-16 h-16 bg-gradient-to-tr from-[#4ADE80] to-[#16A34A] rounded-full flex items-center justify-center mx-auto">
@@ -221,7 +301,6 @@ const Landing = () => {
                 </p>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-8 text-center space-y-4">
                 <div className="w-16 h-16 bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] rounded-full flex items-center justify-center mx-auto">
@@ -250,7 +329,6 @@ const Landing = () => {
               </h2>
               <p className="text-xl text-[#9B9B9B]">We'd love to serve you!</p>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <Card>
                 <CardContent className="p-8 space-y-6">
@@ -265,7 +343,6 @@ const Landing = () => {
                       </p>
                     </div>
                   </div>
-
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-[#FFD966]/10 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Phone className="h-6 w-6 text-[#FFD966]" />
@@ -275,7 +352,6 @@ const Landing = () => {
                       <p className="text-[#9B9B9B]">0917 505 8692</p>
                     </div>
                   </div>
-
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-[#FFD966]/10 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Mail className="h-6 w-6 text-[#FFD966]" />
@@ -287,7 +363,6 @@ const Landing = () => {
                       </p>
                     </div>
                   </div>
-
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-[#FFD966]/10 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Clock className="h-6 w-6 text-[#FFD966]" />
@@ -301,30 +376,51 @@ const Landing = () => {
                   </div>
                 </CardContent>
               </Card>
-
               <Card>
                 <CardContent className="p-8">
                   <h3 className="font-bold text-xl mb-6">Send us a message</h3>
-                  <form className="space-y-4">
+                  <div className="space-y-4">
                     <input
+                      id="contact-name"
                       type="text"
                       placeholder="Your Name"
                       className="w-full px-4 py-3 rounded-lg border border-[#D1D5DB] bg-[#F5F5F5] focus:outline-none focus:ring-2 focus:ring-[#FFD966]"
                     />
                     <input
+                      id="contact-email"
                       type="email"
                       placeholder="Your Email"
                       className="w-full px-4 py-3 rounded-lg border border-[#D1D5DB] bg-[#F5F5F5] focus:outline-none focus:ring-2 focus:ring-[#FFD966]"
                     />
                     <textarea
+                      id="contact-message"
                       placeholder="Your Message"
                       rows={4}
                       className="w-full px-4 py-3 rounded-lg border border-[#D1D5DB] bg-[#F5F5F5] focus:outline-none focus:ring-2 focus:ring-[#FFD966] resize-none"
                     />
-                    <Button className="w-full bg-[#FFD966] hover:bg-[#FFF3B0] transition-colors duration-300">
+                    <Button
+                      className="w-full bg-[#FFD966] hover:bg-[#FFF3B0] transition-colors duration-300"
+                      onClick={() => {
+                        const name =
+                          document.getElementById("contact-name").value;
+                        const email =
+                          document.getElementById("contact-email").value;
+                        const message =
+                          document.getElementById("contact-message").value;
+
+                        const subject = encodeURIComponent(
+                          `Message from ${name}`
+                        );
+                        const body = encodeURIComponent(
+                          `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
+                        );
+
+                        window.location.href = `mailto:agotscatering1977@gmail.com?subject=${subject}&body=${body}`;
+                      }}
+                    >
                       Send Message
                     </Button>
-                  </form>
+                  </div>
                 </CardContent>
               </Card>
             </div>

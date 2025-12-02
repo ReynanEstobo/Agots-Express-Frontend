@@ -1,4 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { CartProvider } from "./contexts/CartContext";
+import { SocketProvider } from "./contexts/SocketContext";
 import { ToastProvider } from "./hooks/use-toast";
 
 import Analytics from "./components/Analytics.jsx";
@@ -22,46 +24,46 @@ import Landing from "./components/Landing.jsx";
 // Checkout Page
 import Checkout from "./components/Checkout.jsx";
 
-import { CartProvider } from "./contexts/CartContext";
-
 function App() {
   return (
     <ToastProvider>
       <CartProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Default route → Landing page */}
-            <Route path="/" element={<Landing />} />
+        <SocketProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Default route → Landing page */}
+              <Route path="/" element={<Landing />} />
 
-            {/* Login */}
-            <Route path="/login" element={<Login />} />
+              {/* Login */}
+              <Route path="/login" element={<Login />} />
 
-            {/* Dashboards */}
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-            <Route path="/staff-dashboard" element={<StaffDashboard />} />
-            <Route path="/rider-dashboard" element={<RiderDashboard />} />
+              {/* Dashboards */}
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+              <Route path="/staff-dashboard" element={<StaffDashboard />} />
+              <Route path="/rider-dashboard" element={<RiderDashboard />} />
 
-            {/* Pages */}
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/menu" element={<Menu />} />
-            <Route path="/feedback" element={<Feedback />} />
-            <Route path="/announcements" element={<Announcements />} />
+              {/* Pages */}
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/menu" element={<Menu />} />
+              <Route path="/feedback" element={<Feedback />} />
+              <Route path="/announcements" element={<Announcements />} />
 
-            {/* Order Menu */}
-            <Route path="/order-menu" element={<OrderMenu />} />
+              {/* Order Menu */}
+              <Route path="/order-menu" element={<OrderMenu />} />
 
-            {/* Checkout */}
-            <Route path="/checkout" element={<Checkout />} />
+              {/* Checkout */}
+              <Route path="/checkout" element={<Checkout />} />
 
-            {/* Analytics */}
-            <Route path="/analytics" element={<Analytics />} />
+              {/* Analytics */}
+              <Route path="/analytics" element={<Analytics />} />
 
-            {/* Optional: 404 Not Found */}
-            <Route path="*" element={<div>Page Not Found</div>} />
-          </Routes>
-        </BrowserRouter>
+              {/* Optional: 404 */}
+              <Route path="*" element={<div>Page Not Found</div>} />
+            </Routes>
+          </BrowserRouter>
+        </SocketProvider>
       </CartProvider>
     </ToastProvider>
   );
