@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginAllRoles } from "../api/LoginAPI.js";
+import { loginAllRoles, registerCustomer } from "../api/LoginAPI.js";
 import LoginForm from "./LoginForm";
 import SignupForm from "./SignupForm";
 
@@ -8,11 +8,11 @@ const Login = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("login");
 
-  // LOGIN FIELDS
+  // ---------------- LOGIN FIELDS ----------------
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
-  // SIGNUP FIELDS
+  // ---------------- SIGNUP FIELDS ----------------
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
@@ -20,10 +20,9 @@ const Login = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
 
-  // ⭐ FIXED LOGIN HANDLER
+  // ---------------- LOGIN HANDLER (UNCHANGED) ----------------
   const handleLogin = async (e) => {
     e.preventDefault();
-
     try {
       const res = await loginAllRoles(loginUsername, loginPassword);
 
@@ -32,30 +31,62 @@ const Login = () => {
         return;
       }
 
-      // Save login data
       localStorage.setItem("token", res.token || "");
       localStorage.setItem("role", res.role);
       localStorage.setItem("user_id", res.id);
 
       alert(`Login Successful! You are logged in as ${res.role}`);
 
-      // ⭐ REDIRECT BASED ON ROLE
       if (res.role === "admin") navigate("/admin-dashboard");
       else if (res.role === "customer") navigate("/customer-dashboard");
       else if (res.role === "staff") navigate("/staff-dashboard");
       else if (res.role === "rider") navigate("/rider-dashboard");
       else navigate("/");
-
     } catch (err) {
       console.error("Login error:", err);
       alert(err.message || "Failed to connect to server.");
     }
   };
 
+  // ---------------- SIGNUP HANDLER ----------------
+  const handleSignup = async (e) => {
+    e.preventDefault();
+
+    if (signupPassword !== signupConfirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    try {
+      const data = await registerCustomer({
+        username: signupUsername,
+        password: signupPassword,
+        first_name: signupName,
+        email: signupEmail,
+        phone: signupPhone,
+        address: "",
+      });
+
+      alert("Signup successful! You can now log in.");
+
+      // Clear signup form
+      setSignupName("");
+      setSignupEmail("");
+      setSignupPhone("");
+      setSignupUsername("");
+      setSignupPassword("");
+      setSignupConfirmPassword("");
+
+      // Switch to login tab
+      setActiveTab("login");
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#323C4D] to-[#0F2247] px-4 sm:px-6">
-      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 lg:p-8 w-full max-w-sm sm:max-w-md lg:max-w-lg shadow-2xl">
-
+      <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full max-w-sm sm:max-w-md lg:max-w-lg">
         {/* Logo */}
         <div className="flex justify-center mb-4 sm:mb-6">
           <div className="bg-yellow-400 rounded-full p-3 sm:p-4">
@@ -106,7 +137,7 @@ const Login = () => {
           </button>
         </div>
 
-        {/* Sliding Forms */}
+        {/* Forms */}
         <div className="overflow-hidden">
           <div
             className={`flex transition-transform duration-500 ${
@@ -139,6 +170,7 @@ const Login = () => {
                 setSignupPassword={setSignupPassword}
                 signupConfirmPassword={signupConfirmPassword}
                 setSignupConfirmPassword={setSignupConfirmPassword}
+                handleSignup={handleSignup} // pass handler
               />
             </div>
           </div>
