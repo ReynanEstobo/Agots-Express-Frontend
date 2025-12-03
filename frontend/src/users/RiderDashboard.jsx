@@ -21,71 +21,103 @@ import { Button } from "../ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/Tabs";
 
-// Modal to view delivery details
+// -------------------- SMALL FIELD --------------------
+const Info = ({ label, value }) => (
+  <div className="flex flex-col gap-0.5 sm:gap-1">
+    <span className="text-xs sm:text-sm font-medium text-gray-500">
+      {label}
+    </span>
+    <span className="text-sm sm:text-base font-semibold text-gray-800 break-words">
+      {value || "—"}
+    </span>
+  </div>
+);
+
+// -------------------- LARGE BLOCK FIELD --------------------
+const BlockInfo = ({ label, value }) => (
+  <div className="flex flex-col gap-1 sm:gap-1.5">
+    <span className="text-xs sm:text-sm font-medium text-gray-500">
+      {label}
+    </span>
+    <div className="w-full p-3 sm:p-4 rounded-lg bg-gray-50 border text-sm sm:text-base text-gray-800 leading-relaxed break-words whitespace-pre-line">
+      {value || "—"}
+    </div>
+  </div>
+);
+
+// -------------------- DELIVERY MODAL --------------------
 const DeliveryModal = ({ delivery, onClose }) => {
   if (!delivery) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Delivery Details</h2>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4 sm:px-6">
+      <div className="bg-white w-full max-w-full sm:max-w-lg rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        {/* HEADER */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b">
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+            Delivery Details
+          </h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-200"
+            className="text-gray-500 hover:text-gray-700"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
-        <div className="space-y-3">
-          {[
-            "orderId",
-            "id",
-            "customer",
-            "address",
-            "phone",
-            "items",
-            "amount",
-            "status",
-            "completedAt",
-          ].map((key) => (
-            <div className="flex justify-between" key={key}>
-              <span className="font-medium text-gray-600">
-                {key === "id"
-                  ? "Delivery ID:"
-                  : key === "completedAt"
-                  ? "Completed At:"
-                  : key.charAt(0).toUpperCase() + key.slice(1) + ":"}
-              </span>
-              <span className="font-semibold">
-                {key === "completedAt" && delivery[key]
-                  ? new Date(delivery[key]).toLocaleString("en-PH")
-                  : delivery[key]}
-              </span>
-            </div>
-          ))}
+
+        {/* BODY */}
+        <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-4 sm:space-y-5 max-h-[60vh] sm:max-h-[70vh] overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <Info label="Order ID" value={delivery.orderId} />
+            <Info
+              label="Customer Name"
+              value={`${delivery.customer_first_name} ${delivery.customer_last_name}`}
+            />
+            <Info label="Phone" value={delivery.customer_phone} />
+            <Info label="Payment Method" value={delivery.payment_method} />
+            <Info label="Status" value={delivery.status} />
+            <Info label="Total Amount" value={`₱${delivery.total_amount}`} />
+          </div>
+
+          <BlockInfo
+            label="Delivery Address"
+            value={delivery.customer_address}
+          />
+          {delivery.delivery_instructions && (
+            <BlockInfo
+              label="Delivery Instructions"
+              value={delivery.delivery_instructions}
+            />
+          )}
+          <BlockInfo
+            label="Assigned Rider"
+            value={
+              delivery.rider_name
+                ? `${delivery.rider_name} (${delivery.rider_phone})`
+                : "Not Assigned"
+            }
+          />
         </div>
-        <div className="mt-6 flex justify-end">
-          <Button
-            style={{ backgroundColor: "#0A1A3F", color: "#FFF" }}
+
+        {/* FOOTER */}
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-t flex justify-end">
+          <button
             onClick={onClose}
+            className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium text-sm sm:text-base"
           >
             Close
-          </Button>
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
+// -------------------- RIDER DASHBOARD --------------------
 const RiderDashboard = () => {
   const { addToast } = useToast();
+  const riderId = sessionStorage.getItem("user_id");
+
   const [rider, setRider] = useState({ name: "Loading...", riderId: "" });
   const [activeDeliveries, setActiveDeliveries] = useState([]);
   const [deliveryHistory, setDeliveryHistory] = useState([]);
@@ -97,9 +129,7 @@ const RiderDashboard = () => {
   });
   const [selectedDelivery, setSelectedDelivery] = useState(null);
 
-  const riderId = sessionStorage.getItem("user_id");
-
-  // Fetch rider info
+  // -------------------- FETCH RIDER INFO --------------------
   useEffect(() => {
     if (!riderId) return setRider({ name: "Unknown Rider", riderId: "N/A" });
 
@@ -116,47 +146,49 @@ const RiderDashboard = () => {
         setRider({ name: "Unknown Rider", riderId });
       }
     };
+
     getRiderInfo();
   }, [riderId, addToast]);
 
-  // Fetch deliveries
+  // -------------------- FETCH DELIVERIES --------------------
   const fetchDeliveries = async () => {
     try {
       const assigned = await fetchRiderOrders(riderId, "assigned");
       const onTheWay = await fetchRiderOrders(riderId, "on the way");
       const completed = await fetchRiderOrders(riderId, "completed");
 
-      // Combine active deliveries and remove duplicates by order id
-      const allActive = [...assigned, ...onTheWay];
-      const uniqueActive = allActive.filter(
-        (order, index, self) =>
-          index === self.findIndex((o) => o.id === order.id)
+      // Active deliveries: assigned + on the way
+      const uniqueActive = [...assigned, ...onTheWay].filter(
+        (order, idx, self) => idx === self.findIndex((o) => o.id === order.id)
+      );
+
+      const uniqueCompleted = completed.filter(
+        (order, idx, self) => idx === self.findIndex((o) => o.id === order.id)
       );
 
       setActiveDeliveries(
         uniqueActive.map((order) => ({
           id: order.id,
           orderId: `ORD-${String(order.id).padStart(3, "0")}`,
-          customer: order.customer_name,
-          address: order.customer_address,
-          phone: order.customer_phone,
-          items: order.items.length,
-          amount: `₱${order.total_amount}`,
+          customer_first_name: order.customer_first_name,
+          customer_last_name: order.customer_last_name,
+          customer_address: order.customer_address,
+          customer_phone: order.customer_phone,
+          payment_method: order.payment_method,
           status: order.status,
+          total_amount: order.total_amount,
+          items: order.items.length,
+          delivery_instructions: order.delivery_instructions,
+          rider_name: order.rider_name,
+          rider_phone: order.rider_phone,
         }))
-      );
-
-      // Deduplicate completed deliveries too
-      const uniqueCompleted = completed.filter(
-        (order, index, self) =>
-          index === self.findIndex((o) => o.id === order.id)
       );
 
       setDeliveryHistory(
         uniqueCompleted.map((order) => ({
           id: order.id,
           orderId: `ORD-${String(order.id).padStart(3, "0")}`,
-          customer: order.customer_name,
+          customer: `${order.customer_first_name} ${order.customer_last_name}`,
           completedAt: order.completed_at,
           amount: `₱${order.total_amount}`,
           rating: order.rating || 0,
@@ -172,13 +204,13 @@ const RiderDashboard = () => {
     if (riderId) fetchDeliveries();
   }, [riderId]);
 
-  // Fetch stats
+  // -------------------- FETCH STATS --------------------
   const fetchStats = async () => {
     try {
       const data = await fetchRiderStats(riderId);
       setStats(data);
     } catch (err) {
-      console.error("Failed to fetch stats", err);
+      console.error(err);
       addToast({ title: "Error", description: "Failed to fetch stats" });
     }
   };
@@ -187,7 +219,7 @@ const RiderDashboard = () => {
     if (riderId) fetchStats();
   }, [riderId]);
 
-  // Accept delivery
+  // -------------------- HANDLE ACCEPT DELIVERY --------------------
   const handleAcceptDelivery = async (deliveryId) => {
     try {
       await acceptDelivery(riderId, deliveryId);
@@ -197,7 +229,6 @@ const RiderDashboard = () => {
           deliveryId
         ).padStart(3, "0")}`,
       });
-
       setActiveDeliveries((prev) =>
         prev.map((d) =>
           d.id === deliveryId ? { ...d, status: "on the way" } : d
@@ -210,7 +241,7 @@ const RiderDashboard = () => {
     }
   };
 
-  // Mark delivery as completed
+  // -------------------- HANDLE MARK DELIVERED --------------------
   const handleMarkDelivered = async (deliveryId) => {
     try {
       await completeDelivery(riderId, deliveryId);
@@ -222,21 +253,15 @@ const RiderDashboard = () => {
         )} marked as delivered`,
       });
 
-      // Move delivery from active to history instantly
       const delivered = activeDeliveries.find((d) => d.id === deliveryId);
       if (delivered) {
         setDeliveryHistory((prev) => [
-          {
-            ...delivered,
-            completedAt: new Date().toISOString(),
-            rating: 0,
-          },
+          { ...delivered, completedAt: new Date().toISOString(), rating: 0 },
           ...prev,
         ]);
       }
 
       setActiveDeliveries((prev) => prev.filter((d) => d.id !== deliveryId));
-
       fetchStats();
     } catch (err) {
       console.error(err);
@@ -247,9 +272,11 @@ const RiderDashboard = () => {
     }
   };
 
+  // -------------------- VIEW MODAL --------------------
   const handleViewInfo = (delivery) => setSelectedDelivery(delivery);
   const closeModal = () => setSelectedDelivery(null);
 
+  // -------------------- STATUS COLOR --------------------
   const getStatusColor = (status) => {
     switch (status) {
       case "assigned":
@@ -261,9 +288,10 @@ const RiderDashboard = () => {
     }
   };
 
+  // -------------------- RENDER --------------------
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#F5F5F5" }}>
-      {/* Header */}
+      {/* HEADER */}
       <header
         style={{
           position: "sticky",
@@ -292,23 +320,36 @@ const RiderDashboard = () => {
               {rider.name} • Rider ID: {rider.riderId}
             </p>
           </div>
-          <Badge
+
+          {/* ---------------- LOGOUT BUTTON ---------------- */}
+          <button
+            onClick={() => {
+              sessionStorage.clear(); // remove session data
+              window.location.href = "/"; // redirect to login or landing page
+            }}
             style={{
               backgroundColor: "#F2C94C",
               color: "#0A1A3F",
-              fontSize: "1.125rem",
-              padding: "0.5rem 1rem",
+              fontWeight: 600,
+              padding: "0.5rem 1.25rem",
+              borderRadius: "0.75rem",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.2s",
             }}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = "#E0B941")}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = "#F2C94C")}
           >
-            Available
-          </Badge>
+            Log Out
+          </button>
         </div>
       </header>
 
+      {/* CONTENT */}
       <div
         style={{ maxWidth: "1280px", margin: "0 auto", padding: "2rem 1.5rem" }}
       >
-        {/* Stats Cards */}
+        {/* STATS */}
         <div
           style={{
             display: "grid",
@@ -380,16 +421,16 @@ const RiderDashboard = () => {
           ))}
         </div>
 
-        {/* Tabs */}
+        {/* TABS */}
         <Tabs defaultValue="assigned" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6 gap-4">
             <TabsTrigger value="assigned">
-              Assigned Deliveries ({activeDeliveries.length})
+              Active Deliveries ({activeDeliveries.length})
             </TabsTrigger>
             <TabsTrigger value="history">Delivery History</TabsTrigger>
           </TabsList>
 
-          {/* Active Deliveries */}
+          {/* ACTIVE DELIVERIES */}
           <TabsContent value="assigned" className="space-y-4">
             {activeDeliveries.length === 0 ? (
               <Card>
@@ -411,7 +452,7 @@ const RiderDashboard = () => {
               </Card>
             ) : (
               activeDeliveries.map((delivery) => (
-                <Card key={delivery.id} style={{ marginBottom: "1rem" }}>
+                <Card key={delivery.id}>
                   <CardHeader>
                     <div
                       style={{
@@ -482,12 +523,13 @@ const RiderDashboard = () => {
                           />
                           <div>
                             <p style={{ fontWeight: 500 }}>
-                              {delivery.customer}
+                              {delivery.customer_first_name}{" "}
+                              {delivery.customer_last_name}
                             </p>
                             <p
                               style={{ fontSize: "0.875rem", color: "#6B7280" }}
                             >
-                              {delivery.address}
+                              {delivery.customer_address}
                             </p>
                           </div>
                         </div>
@@ -506,7 +548,7 @@ const RiderDashboard = () => {
                             }}
                           />
                           <p style={{ fontSize: "0.875rem" }}>
-                            {delivery.phone}
+                            {delivery.customer_phone}
                           </p>
                         </div>
                       </div>
@@ -543,9 +585,9 @@ const RiderDashboard = () => {
                           >
                             Amount
                           </span>
-                          <span style={{ fontWeight: 700 }}>
-                            {delivery.amount}
-                          </span>
+                          <span
+                            style={{ fontWeight: 700 }}
+                          >{`₱${delivery.total_amount}`}</span>
                         </div>
                       </div>
                     </div>
@@ -590,11 +632,10 @@ const RiderDashboard = () => {
                               marginRight: "0.5rem",
                             }}
                           />
-                          Mark as Delivered
+                          Mark Delivered
                         </Button>
                       )}
                       <Button
-                        variant="outline"
                         style={{ flex: 1 }}
                         onClick={() => handleViewInfo(delivery)}
                       >
@@ -607,93 +648,92 @@ const RiderDashboard = () => {
             )}
           </TabsContent>
 
-          {/* Delivery History */}
-          {/* Delivery History */}
-<TabsContent value="history" className="space-y-4">
-  {deliveryHistory.length === 0 ? (
-    <Card>
-      <CardContent style={{ padding: "3rem 1rem", textAlign: "center" }}>
-        <Package
-          style={{
-            height: "3rem",
-            width: "3rem",
-            margin: "0 auto 1rem",
-            color: "#6B7280",
-          }}
-        />
-        <p style={{ color: "#6B7280" }}>No delivery history</p>
-      </CardContent>
-    </Card>
-  ) : (
-    deliveryHistory.map((delivery) => {
-      const completedDate = delivery.completedAt
-        ? new Date(delivery.completedAt).toLocaleString("en-PH")
-        : "-";
-      return (
-        <Card key={delivery.id} style={{ marginBottom: "1rem" }}>
-          <CardContent
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "1rem",
-            }}
-          >
-            <div>
-              <p style={{ fontWeight: 500, fontSize: "1rem" }}>
-                {delivery.customer}
-              </p>
-              <p
-                style={{
-                  fontSize: "0.875rem",
-                  color: "#6B7280",
-                  marginTop: "0.25rem",
-                }}
-              >
-                {delivery.orderId} • Completed on {completedDate}
-              </p>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <p
-                style={{
-                  fontWeight: 700,
-                  color: "#0A1A3F",
-                  fontSize: "1rem",
-                }}
-              >
-                {delivery.amount}
-              </p>
-
-              {/* Green Filled / Dark Gray Empty Star Rating */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.25rem",
-                  justifyContent: "flex-end",
-                  marginTop: "0.5rem",
-                }}
-              >
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
+          {/* DELIVERY HISTORY - Updated design */}
+          <TabsContent value="history" className="space-y-4">
+            {deliveryHistory.length === 0 ? (
+              <Card>
+                <CardContent
+                  style={{ padding: "3rem 1rem", textAlign: "center" }}
+                >
+                  <Package
                     style={{
-                      width: "1.5rem",
-                      height: "1.5rem",
-                      color: i < delivery.rating ? "#22C55E" : "#4B5563",
-                      fill: i < delivery.rating ? "#22C55E" : "none",
+                      height: "3rem",
+                      width: "3rem",
+                      margin: "0 auto 1rem",
+                      color: "#6B7280",
                     }}
                   />
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    })
-  )}
-</TabsContent>
-
+                  <p style={{ color: "#6B7280" }}>No delivery history</p>
+                </CardContent>
+              </Card>
+            ) : (
+              deliveryHistory.map((delivery) => {
+                const completedDate = delivery.completedAt
+                  ? new Date(delivery.completedAt).toLocaleString("en-PH")
+                  : "-";
+                return (
+                  <Card key={delivery.id}>
+                    <CardContent
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "1rem",
+                      }}
+                    >
+                      <div>
+                        <p style={{ fontWeight: 500, fontSize: "1rem" }}>
+                          {delivery.customer}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: "0.875rem",
+                            color: "#6B7280",
+                            marginTop: "0.25rem",
+                          }}
+                        >
+                          {delivery.orderId} • Completed on {completedDate}
+                        </p>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <p
+                          style={{
+                            fontWeight: 700,
+                            color: "#0A1A3F",
+                            fontSize: "1rem",
+                          }}
+                        >
+                          {delivery.amount}
+                        </p>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.25rem",
+                            justifyContent: "flex-end",
+                            marginTop: "0.5rem",
+                          }}
+                        >
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              style={{
+                                width: "1.5rem",
+                                height: "1.5rem",
+                                color:
+                                  i < delivery.rating ? "#22C55E" : "#4B5563",
+                                fill: i < delivery.rating ? "#22C55E" : "none",
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </TabsContent>
         </Tabs>
       </div>
 
