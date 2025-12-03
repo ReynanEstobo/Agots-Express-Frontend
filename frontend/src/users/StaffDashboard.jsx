@@ -1,4 +1,3 @@
-// StaffDashboard.jsx
 import {
   Bike,
   CheckCircle2,
@@ -7,7 +6,13 @@ import {
   Package,
   Search,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  assignRiderToOrder,
+  fetchActiveOrders,
+  fetchDashboardStats,
+  updateOrderStatus,
+} from "../api/StaffAPI";
 import { useToast } from "../hooks/use-toast";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -37,79 +42,68 @@ import {
   TableRow,
 } from "../ui/Tables";
 
-// Mock Data
-const mockOrders = [
-  {
-    id: "ORD-001",
-    customer: "Juan Dela Cruz",
-    items: "Chicken Adobo, Pancit Canton",
-    time: "10 mins ago",
-    status: "pending",
-    priority: "high",
-  },
-  {
-    id: "ORD-002",
-    customer: "Maria Santos",
-    items: "Sinigang, Lumpia",
-    time: "15 mins ago",
-    status: "preparing",
-    priority: "medium",
-  },
-  {
-    id: "ORD-003",
-    customer: "Pedro Reyes",
-    items: "Lechon Kawali, Halo-Halo",
-    time: "5 mins ago",
-    status: "pending",
-    priority: "high",
-  },
-  {
-    id: "ORD-004",
-    customer: "Ana Garcia",
-    items: "Kare-Kare, Leche Flan",
-    time: "20 mins ago",
-    status: "preparing",
-    priority: "low",
-  },
-  {
-    id: "ORD-005",
-    customer: "Jose Lim",
-    items: "Sisig, Calamansi Juice",
-    time: "2 mins ago",
-    status: "ready",
-    priority: "high",
-  },
-];
-
-const mockRiders = [
-  { id: "R001", name: "Miguel Santos", status: "available", deliveries: 12 },
-  { id: "R002", name: "Carlos Reyes", status: "available", deliveries: 8 },
-  { id: "R003", name: "Ramon Cruz", status: "busy", deliveries: 15 },
-];
-
 const StaffDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const { addToast } = useToast();
+  const [orders, setOrders] = useState([]);
+  const [availableRiders, setAvailableRiders] = useState([]);
+  const [stats, setStats] = useState({
+    pending: 0,
+    preparing: 0,
+    readyForDelivery: 0,
+    availableRiders: 0,
+  });
 
-  // Replace this dynamically from auth context or API
+  const { addToast } = useToast();
   const userRole = "Staff";
 
-  // Status colors
+  // ----------------------------
+  // Load dashboard data
+  // ----------------------------
+  const loadDashboardData = async () => {
+    try {
+      const statData = await fetchDashboardStats();
+      setStats(statData);
+
+      const orderData = await fetchActiveOrders();
+      setOrders(orderData.orders || []);
+      setAvailableRiders(orderData.riders || []);
+    } catch (err) {
+      addToast({
+        title: "Error",
+        description: "Failed to load dashboard data",
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData(); // initial load
+
+    const interval = setInterval(() => {
+      loadDashboardData(); // fetch latest data every 5 seconds
+    }, 5000);
+
+    return () => clearInterval(interval); // cleanup on unmount
+  }, []);
+
+  // ----------------------------
+  // Status & priority colors
+  // ----------------------------
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
         return "bg-[#F2C94C] text-[#0A1A3F]";
       case "preparing":
-        return "bg-[#13A4E9] text-[#FFFFFF]";
+        return "bg-[#13A4E9] text-white";
       case "ready":
-        return "bg-[#2CC48C] text-[#FFFFFF]";
+        return "bg-[#2CC48C] text-white";
+      case "assigned":
+        return "bg-[#0A1A3F] text-white";
       default:
         return "bg-[#F5F5F5] text-[#0A1A3F]";
     }
   };
 
-  // Priority colors
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "high":
@@ -123,53 +117,74 @@ const StaffDashboard = () => {
     }
   };
 
-  const handlePrepareOrder = (orderId) => {
-    addToast({
-      title: "Order Updated",
-      description: `Order ${orderId} is now being prepared`,
-    });
+  // ----------------------------
+  // Handle status updates
+  // ----------------------------
+  const handlePrepareOrder = async (orderId) => {
+    try {
+      await updateOrderStatus(orderId, "preparing");
+      addToast({
+        title: "Order Updated",
+        description: `Order ${orderId} is now preparing`,
+      });
+      loadDashboardData();
+    } catch {
+      addToast({
+        title: "Error",
+        description: `Failed to update order ${orderId}`,
+      });
+    }
   };
 
-  const handleMarkAsReady = (orderId) => {
-    addToast({
-      title: "Order Updated",
-      description: `Order ${orderId} marked as ready for delivery`,
-    });
+  const handleMarkAsReady = async (orderId) => {
+    try {
+      await updateOrderStatus(orderId, "ready");
+      addToast({
+        title: "Order Updated",
+        description: `Order ${orderId} is ready for delivery`,
+      });
+      loadDashboardData();
+    } catch {
+      addToast({
+        title: "Error",
+        description: `Failed to mark order ${orderId} as ready`,
+      });
+    }
   };
 
-  const handleAssignRider = (orderId, riderId) => {
-    addToast({
-      title: "Rider Assigned",
-      description: `Order ${orderId} assigned to rider ${riderId}`,
-    });
+  const handleAssignRider = async (orderId, riderId) => {
+    try {
+      await assignRiderToOrder(orderId, riderId);
+      addToast({
+        title: "Rider Assigned",
+        description: `Order ${orderId} assigned to rider ${riderId}`,
+      });
+
+      // REFRESH DATA AFTER SUCCESSFUL ASSIGNMENT
+      await loadDashboardData();
+    } catch {
+      addToast({
+        title: "Error",
+        description: `Failed to assign rider to order ${orderId}`,
+      });
+    }
   };
 
-  // Filter orders based on search & status
-  const filteredOrders = mockOrders.filter((order) => {
+  // ----------------------------
+  // Filter orders by status & search
+  // ----------------------------
+  const filteredOrders = orders.filter((order) => {
     const matchesStatus =
       filterStatus === "all" || order.status === filterStatus;
     const matchesSearch =
       order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.items.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase());
+      order.id.toString().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
-  // Stats counts
-  const pendingCount = filteredOrders.filter(
-    (o) => o.status === "pending"
-  ).length;
-  const preparingCount = filteredOrders.filter(
-    (o) => o.status === "preparing"
-  ).length;
-  const readyCount = filteredOrders.filter((o) => o.status === "ready").length;
-  const availableRidersCount = mockRiders.filter(
-    (r) => r.status === "available"
-  ).length;
-
   return (
     <div className="flex-1 bg-[#F5F5F5] text-[#0A1A3F]">
-      {/* Pass userRole to DashboardHeader */}
       <DashboardHeader userRole={userRole} />
       <main className="p-8">
         {/* Header */}
@@ -182,93 +197,60 @@ const StaffDashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {/* Pending Orders */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 text-[#6B7280]">
-                <Clock className="h-4 w-4" /> Pending Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-[#F2C94C]">
-                {pendingCount}
-              </div>
-              <p className="text-xs text-[#6B7280] mt-1">Waiting to prepare</p>
-            </CardContent>
-          </Card>
-
-          {/* In Preparation */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 text-[#6B7280]">
-                <Package className="h-4 w-4" /> In Preparation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-[#13A4E9]">
-                {preparingCount}
-              </div>
-              <p className="text-xs text-[#6B7280] mt-1">Being prepared</p>
-            </CardContent>
-          </Card>
-
-          {/* Ready for Delivery */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 text-[#6B7280]">
-                <CheckCircle2 className="h-4 w-4" /> Ready for Delivery
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-[#2CC48C]">
-                {readyCount}
-              </div>
-              <p className="text-xs text-[#6B7280] mt-1">Awaiting riders</p>
-            </CardContent>
-          </Card>
-
-          {/* Available Riders */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 text-[#6B7280]">
-                <Bike className="h-4 w-4" /> Available Riders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-[#F2C94C]">
-                {availableRidersCount}
-              </div>
-              <p className="text-xs text-[#6B7280] mt-1">Ready to deliver</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            icon={<Clock />}
+            title="Pending Orders"
+            value={stats.pending}
+            color="text-[#F2C94C]"
+            desc="Waiting to prepare"
+          />
+          <StatCard
+            icon={<Package />}
+            title="In Preparation"
+            value={stats.preparing}
+            color="text-[#13A4E9]"
+            desc="Being prepared"
+          />
+          <StatCard
+            icon={<CheckCircle2 />}
+            title="Ready for Delivery"
+            value={stats.readyForDelivery}
+            color="text-[#2CC48C]"
+            desc="Awaiting riders"
+          />
+          <StatCard
+            icon={<Bike />}
+            title="Available Riders"
+            value={stats.availableRiders}
+            color="text-[#F2C94C]"
+            desc="Ready to deliver"
+          />
         </div>
 
         {/* Filters */}
         <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
-                <Input
-                  placeholder="Search orders..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 border-[#D1D5DB]"
-                />
-              </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-full md:w-48 border-[#D1D5DB]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Orders</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="preparing">Preparing</SelectItem>
-                  <SelectItem value="ready">Ready</SelectItem>
-                </SelectContent>
-              </Select>
+          <CardContent className="pt-6 flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
+              <Input
+                placeholder="Search orders..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 border-[#D1D5DB]"
+              />
             </div>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-full md:w-48 border-[#D1D5DB]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Orders</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="preparing">Preparing</SelectItem>
+                <SelectItem value="ready">Ready</SelectItem>
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
 
@@ -307,7 +289,6 @@ const StaffDashboard = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right flex flex-col justify-center items-end space-y-2">
-                      {/* Prepare button for pending orders */}
                       {order.status === "pending" && (
                         <Button
                           size="sm"
@@ -317,8 +298,6 @@ const StaffDashboard = () => {
                           <Package className="h-4 w-4 mr-1" /> Prepare
                         </Button>
                       )}
-
-                      {/* Mark Ready button for preparing orders */}
                       {order.status === "preparing" && (
                         <Button
                           size="sm"
@@ -328,28 +307,22 @@ const StaffDashboard = () => {
                           <CheckCircle2 className="h-4 w-4 mr-1" /> Mark Ready
                         </Button>
                       )}
-
-                      {/* Assign Rider button for ready orders */}
                       {order.status === "ready" && (
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              className="bg-[#F2C94C] hover:bg-[#D9B73C] text-[#0A1A3F]"
-                            >
+                            <Button className="bg-[#F2C94C] hover:bg-[#D9B73C] text-[#0A1A3F]">
                               <Bike className="h-4 w-4 mr-1" /> Assign Rider
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
                               <DialogTitle>
-                                Assign Rider to {order.id}
+                                Assign Rider to Order {order.id}
                               </DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4 pt-4">
-                              {mockRiders
-                                .filter((r) => r.status === "available")
-                                .map((rider) => (
+                              {availableRiders.length > 0 ? (
+                                availableRiders.map((rider) => (
                                   <div
                                     key={rider.id}
                                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-[#F5F5F5] transition-colors"
@@ -371,7 +344,12 @@ const StaffDashboard = () => {
                                       Assign
                                     </Button>
                                   </div>
-                                ))}
+                                ))
+                              ) : (
+                                <p className="text-sm text-[#6B7280]">
+                                  No available riders at the moment
+                                </p>
+                              )}
                             </div>
                           </DialogContent>
                         </Dialog>
@@ -389,3 +367,20 @@ const StaffDashboard = () => {
 };
 
 export default StaffDashboard;
+
+// ----------------------------
+// Stat Card Component
+// ----------------------------
+const StatCard = ({ icon, title, value, color, desc }) => (
+  <Card className="hover:shadow-lg transition-shadow">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-sm font-medium flex items-center gap-2 text-[#6B7280]">
+        {icon} {title}
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div className={`text-3xl font-bold ${color}`}>{value}</div>
+      <p className="text-xs text-[#6B7280] mt-1">{desc}</p>
+    </CardContent>
+  </Card>
+);
