@@ -1,4 +1,4 @@
-import { CreditCard, UtensilsCrossed, Wallet } from "lucide-react";
+import { UtensilsCrossed, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
@@ -104,13 +104,31 @@ const MapSelector = ({ coordinates, setCoordinates, setAddress }) => (
   </MapContainer>
 );
 
+// Under Development Badge
+const UnderDevelopmentBadge = () => (
+  <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+    <span className="h-1.5 w-1.5 bg-white rounded-full animate-pulse"></span>
+    Under Development
+  </div>
+);
+
+// GCash Logo Component
+const GCashLogo = () => (
+  <div className="flex items-center gap-2">
+    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-md">
+      <span className="text-white font-bold text-lg">G</span>
+    </div>
+  </div>
+);
+
 // Checkout Component
 const Checkout = () => {
   const { items, total, clearCart } = useCart();
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  // FIX: Initialize paymentMethod as empty string instead of "cash"
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [coordinates, setCoordinates] = useState([13.9503, 120.7334]);
   const [address, setAddress] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -119,6 +137,8 @@ const Checkout = () => {
   const [email, setEmail] = useState("");
   const [instructions, setInstructions] = useState("");
   const deliveryFee = 50;
+
+  // FIX: Only add delivery fee if cash payment is selected
   const finalTotal = paymentMethod === "cash" ? total + deliveryFee : total;
 
   const handlePlaceOrder = async (e) => {
@@ -128,6 +148,15 @@ const Checkout = () => {
       addToast({
         title: "Missing Information",
         description: "Please fill all required fields.",
+      });
+      return;
+    }
+
+    // FIX: Properly check if payment method is selected
+    if (!paymentMethod) {
+      addToast({
+        title: "Payment Method Required",
+        description: "Please select a payment method to continue.",
       });
       return;
     }
@@ -299,6 +328,7 @@ const Checkout = () => {
                     value={paymentMethod}
                     onValueChange={setPaymentMethod}
                   >
+                    {/* Cash on Delivery Option */}
                     <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer mb-2">
                       <RadioGroupItem value="cash" id="cash" />
                       <Label
@@ -314,22 +344,36 @@ const Checkout = () => {
                         </div>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer">
-                      <RadioGroupItem value="card" id="card" />
+
+                    {/* GCash Option - Disabled with Under Development Badge */}
+                    <div className="relative flex items-center space-x-2 p-4 border rounded-lg mb-2 bg-gray-100 opacity-50 pointer-events-none">
+                      <UnderDevelopmentBadge />
+                      <RadioGroupItem
+                        value="gcash"
+                        id="gcash"
+                        disabled
+                        className="pointer-events-auto"
+                      />
                       <Label
-                        htmlFor="card"
-                        className="flex items-center gap-2 flex-1 cursor-pointer"
+                        htmlFor="gcash"
+                        className="flex items-center gap-2 flex-1 cursor-not-allowed"
                       >
-                        <CreditCard className="h-5 w-5 text-[hsl(var(--accent))]" />
+                        <GCashLogo />
                         <div>
-                          <div className="font-semibold">Credit/Debit Card</div>
+                          <div className="font-semibold text-gray-500 line-through">
+                            GCash
+                          </div>
                           <div className="text-sm text-gray-400">
-                            Pay securely online
+                            Digital wallet payment - Currently unavailable
                           </div>
                         </div>
                       </Label>
                     </div>
                   </RadioGroup>
+
+                  <div className="mt-2 text-sm text-gray-500 text-center">
+                    Currently, only Cash on Delivery is available
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -364,6 +408,7 @@ const Checkout = () => {
                       <span>Subtotal</span>
                       <span>₱{total.toFixed(2)}</span>
                     </div>
+                    {/* FIX: Only show delivery fee if cash payment is selected */}
                     {paymentMethod === "cash" && (
                       <div className="flex justify-between">
                         <span>Delivery Fee</span>

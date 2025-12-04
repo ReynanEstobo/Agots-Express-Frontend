@@ -1,5 +1,5 @@
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 import { useToast } from "../hooks/use-toast";
@@ -14,7 +14,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../ui/Sheet";
-import { Textarea } from "../ui/Textarea";
 
 const colors = {
   accent: "#F2C94C",
@@ -41,11 +40,7 @@ export default function CartSheet() {
   // ------------------ HANDLERS ------------------
   const handleQuantityChange = (item, quantity) => {
     if (quantity < 1) return;
-    updateQuantity(item.menu_id, quantity, item.specialInstructions);
-  };
-
-  const handleInstructionsChange = (item, text) => {
-    updateQuantity(item.menu_id, item.quantity, text);
+    updateQuantity(item.menu_id, quantity);
   };
 
   const handleRemove = (item) => {
@@ -200,21 +195,6 @@ export default function CartSheet() {
                       ₱{(item.price * item.quantity).toFixed(2)}
                     </span>
                   </div>
-
-                  {/* SPECIAL INSTRUCTIONS */}
-                  <Textarea
-                    rows={2}
-                    placeholder="Special instructions (optional)"
-                    value={item.specialInstructions}
-                    onChange={(e) =>
-                      handleInstructionsChange(item, e.target.value)
-                    }
-                    className="text-sm"
-                    style={{
-                      borderColor: colors.border,
-                      color: colors.primaryDark,
-                    }}
-                  />
                 </div>
               ))}
             </div>
