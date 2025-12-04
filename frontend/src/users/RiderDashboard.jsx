@@ -1,10 +1,12 @@
 import {
   CheckCircle2,
+  LogOut,
   MapPin,
   Package,
   Phone,
   Star,
   TrendingUp,
+  User,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -103,13 +105,67 @@ const DeliveryModal = ({ delivery, onClose }) => {
         <div className="px-4 sm:px-6 py-4 sm:py-5 border-t flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium text-sm sm:text-base"
+            className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium text-sm sm:text-base transition-colors"
           >
             Close
           </button>
         </div>
       </div>
     </div>
+  );
+};
+
+// -------------------- HEADER --------------------
+const RiderDashboardHeader = ({ riderName, riderId }) => {
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const toggleAdminMenu = () => setShowAdminMenu(!showAdminMenu);
+
+  const handleLogout = () => {
+    alert("Logged out successfully!");
+    sessionStorage.clear();
+    window.location.href = "/";
+  };
+
+  return (
+    <header className="sticky top-0 bg-[#0A1A3F] text-white border-b border-white/10 z-40">
+      <div className="max-w-1280 mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold">Rider Dashboard</h1>
+          <p className="text-sm sm:text-base text-white/70">
+            {riderName} • Rider ID: {riderId}
+          </p>
+        </div>
+
+        {/* PROFILE MENU */}
+        <div className="flex items-center gap-6 ml-4 relative">
+          <div className="relative">
+            <button
+              onClick={toggleAdminMenu}
+              className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg p-1 transition"
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                <User size={20} className="text-white" />
+              </div>
+              <div className="text-sm">
+                <p className="font-semibold">Rider</p>
+                <p className="text-white/70">Settings</p>
+              </div>
+            </button>
+
+            {showAdminMenu && (
+              <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg py-2 text-sm z-20">
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 hover:text-gray-900 w-full transition text-black"
+                >
+                  <LogOut size={16} /> Log Out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
   );
 };
 
@@ -291,29 +347,9 @@ const RiderDashboard = () => {
 
   // -------------------- RENDER --------------------
   return (
-    <div className="min-h-screen bg-[#F5F5F5] pb-16 md:pb-16">
+    <div className="min-h-screen bg-[#F5F5F5] pb-16">
       {/* HEADER */}
-      <header className="sticky top-0 bg-[#0A1A3F] text-white border-b border-white/10 z-40">
-        <div className="max-w-1280 mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Rider Dashboard</h1>
-            <p className="text-sm sm:text-base text-white/70">
-              {rider.name} • Rider ID: {rider.riderId}
-            </p>
-          </div>
-
-          {/* ---------------- LOGOUT BUTTON ---------------- */}
-          <button
-            onClick={() => {
-              sessionStorage.clear();
-              window.location.href = "/";
-            }}
-            className="bg-[#F2C94C] text-[#0A1A3F] font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg border-none cursor-pointer transition-all hover:bg-[#E0B941]"
-          >
-            Log Out
-          </button>
-        </div>
-      </header>
+      <RiderDashboardHeader riderName={rider.name} riderId={rider.riderId} />
 
       {/* CONTENT */}
       <div className="max-w-1280 mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -368,7 +404,7 @@ const RiderDashboard = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Desktop Tabs */}
           <TabsList className="grid w-full grid-cols-2 mb-6 gap-4 hidden sm:grid">
-            <TabsTrigger value="assigned">
+            <TabsTrigger value="assigned" className="border-r border-gray-200">
               Active Deliveries ({activeDeliveries.length})
             </TabsTrigger>
             <TabsTrigger value="history">Delivery History</TabsTrigger>
@@ -525,35 +561,32 @@ const RiderDashboard = () => {
         </Tabs>
       </div>
 
-      {/* Mobile Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 sm:hidden md:hidden z-50">
+      {/* Mobile Navigation - Only visible on small screens */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 sm:hidden z-50">
+        {/* Navigation Buttons */}
         <div className="flex justify-around py-2">
           <button
             onClick={() => setActiveTab("assigned")}
-            className={`flex-1 py-3 px-4 text-center ${
+            className={`flex-1 py-3 px-4 text-center flex flex-col items-center justify-center transition-colors ${
               activeTab === "assigned"
                 ? "text-[#0A1A3F] font-medium"
                 : "text-gray-500"
             }`}
           >
-            <div className="flex flex-col items-center">
-              <Package className="w-5 h-5 mb-1" />
-              <span className="text-xs">Active</span>
-              <span className="text-xs">({activeDeliveries.length})</span>
-            </div>
+            <Package className="w-5 h-5 mb-1" />
+            <span className="text-xs">Active</span>
+            <span className="text-xs mt-1">({activeDeliveries.length})</span>
           </button>
           <button
             onClick={() => setActiveTab("history")}
-            className={`flex-1 py-3 px-4 text-center ${
+            className={`flex-1 py-3 px-4 text-center flex flex-col items-center justify-center transition-colors ${
               activeTab === "history"
                 ? "text-[#0A1A3F] font-medium"
                 : "text-gray-500"
             }`}
           >
-            <div className="flex flex-col items-center">
-              <TrendingUp className="w-5 h-5 mb-1" />
-              <span className="text-xs">History</span>
-            </div>
+            <TrendingUp className="w-5 h-5 mb-1" />
+            <span className="text-xs">History</span>
           </button>
         </div>
       </div>

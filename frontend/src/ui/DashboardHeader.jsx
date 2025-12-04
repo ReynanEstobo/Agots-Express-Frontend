@@ -1,25 +1,19 @@
-import { Bell, LogOut, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export const DashboardHeader = ({ userRole = "Admin" }) => {
   const [showAdminMenu, setShowAdminMenu] = useState(false);
-  const [showNotification, setShowNotification] = useState(false);
   const navigate = useNavigate();
 
   const toggleAdminMenu = () => setShowAdminMenu(!showAdminMenu);
-
-  const handleNotificationClick = () => {
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
-  };
 
   const handleLogout = () => {
     alert("Logged out successfully!");
     navigate("/");
   };
 
-  // Dynamically set title & profile
+  // Dynamically set title
   const headerTitle =
     userRole === "Staff"
       ? "Agot's Staff"
@@ -34,28 +28,8 @@ export const DashboardHeader = ({ userRole = "Admin" }) => {
         {headerTitle}
       </h1>
 
-      {/* RIGHT SIDE ICONS */}
+      {/* RIGHT SIDE PROFILE */}
       <div className="flex items-center gap-6 ml-4 relative">
-        {/* Notification */}
-        <button onClick={handleNotificationClick} className="relative">
-          <Bell
-            size={20}
-            className="text-gray-600 hover:text-gray-900 transition"
-          />
-          {showNotification && (
-            <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-lg p-4 text-sm text-gray-700 flex items-center gap-3 z-50">
-              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center shadow-sm">
-                <User size={20} className="text-yellow-600" />
-              </div>
-              <div>
-                <p className="font-semibold">New Notification</p>
-                <p>Check your updates!</p>
-              </div>
-            </div>
-          )}
-        </button>
-
-        {/* Profile */}
         <div className="relative">
           <button
             onClick={toggleAdminMenu}
