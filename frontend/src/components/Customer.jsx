@@ -162,7 +162,7 @@ const Customers = () => {
                     <p className="text-gray-500 text-sm">{card.title}</p>
                     <p className="text-2xl font-bold mt-1">
                       {card.valueKey === "avgSpent"
-                        ? `$${stats[card.valueKey].toFixed(2)}`
+                        ? `₱${stats[card.valueKey].toFixed(2)}`
                         : stats[card.valueKey]}
                     </p>
                   </div>
