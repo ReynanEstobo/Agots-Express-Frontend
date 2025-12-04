@@ -37,35 +37,38 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
   const [stats, setStats] = useState({
-    totalOrders: 0,
+    totalOrdersToday: 0,
     preparing: 0,
     pending: 0,
     completed: 0,
   });
-
   const [showModal, setShowModal] = useState(false);
   const [selectedOrderItems, setSelectedOrderItems] = useState([]);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
 
-  // Function to load orders
+  // -----------------------
+  // Load all orders & stats
+  // -----------------------
   const loadOrders = async () => {
     try {
       const data = await fetchAllOrders();
 
-      // Sort the orders by created_at (newest to oldest)
-      const sortedData = data.sort((a, b) => {
-        const dateA = new Date(a.created_at);
-        const dateB = new Date(b.created_at);
-        return dateB - dateA; // newest first
-      });
-
+      const sortedData = data.sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
       setOrders(sortedData);
 
-      // Stats for only pending, preparing, completed
+      // Today's date
+      const today = new Date().toISOString().split("T")[0];
+
+      // Stats
+      const totalOrdersToday = data.filter(
+        (o) => o.created_at.split("T")[0] === today
+      ).length;
+
       setStats({
-        totalOrders: data.length,
+        totalOrdersToday,
         pending: data.filter((o) => o.status === "pending").length,
         preparing: data.filter((o) => o.status === "preparing").length,
         completed: data.filter((o) => o.status === "completed").length,
@@ -75,18 +78,15 @@ const Orders = () => {
     }
   };
 
-  // Fetch orders initially and set interval for auto-fetch
   useEffect(() => {
-    loadOrders(); // Initial fetch
-
-    const intervalId = setInterval(() => {
-      loadOrders(); // Fetch every 30 seconds
-    }, 30000);
-
+    loadOrders();
+    const intervalId = setInterval(loadOrders, 30000); // refresh every 30s
     return () => clearInterval(intervalId);
   }, []);
 
-  // Filter orders based on search and status
+  // -----------------------
+  // Filter orders for table
+  // -----------------------
   const filteredOrders = orders.filter((order) => {
     const matchesStatus =
       statusFilter === "all" || order.status === statusFilter;
@@ -96,7 +96,9 @@ const Orders = () => {
     return matchesStatus && matchesSearch;
   });
 
-  // View order items modal
+  // -----------------------
+  // View order modal
+  // -----------------------
   const handleViewOrder = async (orderId) => {
     try {
       const res = await axios.get(
@@ -110,11 +112,13 @@ const Orders = () => {
     }
   };
 
-  // Stats cards (unchanged)
+  // -----------------------
+  // Stats cards configuration
+  // -----------------------
   const statsCards = [
     {
-      title: "Today's Total Orders",
-      value: stats.totalOrders,
+      title: "Total Orders",
+      value: stats.totalOrdersToday,
       iconColor: "bg-blue-400",
     },
     { title: "Preparing", value: stats.preparing, iconColor: "bg-orange-400" },
@@ -129,14 +133,15 @@ const Orders = () => {
     "bg-orange-400": "bg-gradient-to-br from-orange-400 to-orange-300",
   };
 
+  // -----------------------
+  // Render
+  // -----------------------
   return (
     <div className="min-h-screen bg-[#f8f9fb]">
       <DashboardSidebar />
       <div className="pl-64">
         <DashboardHeader />
-
         <main className="px-8 py-6 space-y-6">
-          {/* Page Header */}
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-[#1b2559]">
@@ -154,7 +159,6 @@ const Orders = () => {
               const gradientClass =
                 gradientMap[card.iconColor] || "bg-gray-400";
               const textColor = card.iconColor.replace("bg-", "text-");
-
               return (
                 <div
                   key={idx}
@@ -177,13 +181,13 @@ const Orders = () => {
           </div>
 
           {/* Orders Table */}
+          {/* Orders Table */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-[#1b2559]">
                 All Orders
               </CardTitle>
             </CardHeader>
-
             <CardContent>
               {/* Filters */}
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -196,7 +200,6 @@ const Orders = () => {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
-
                 <Select defaultValue="all" onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full sm:w-[180px] border-gray-300 bg-white">
                     <SelectValue placeholder="All Status" />
@@ -225,7 +228,6 @@ const Orders = () => {
                       <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
-
                   <TableBody>
                     {filteredOrders.map((order) => (
                       <TableRow key={order.id}>
